@@ -1,0 +1,11 @@
+pandas
+numpy
+matplotlib
+scipy
+pyproj
+openpyxl
+seaborn
+pyyaml
+pytest
+nbformat
+pywavelets

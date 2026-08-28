@@ -1,0 +1,12 @@
+description: Dynamic driving in Coventry including B-Roads, 9 Roundabouts, Reverse
+  maneuvers, and Hard Braking.
+driver: A
+duration_min: 86.2
+location: Coventry, UK
+name: S1
+smartphone_cols: 27
+smartphone_file: Synchronised V abd S datasets/Uncategorised IOVNB Dataset/S-Dataset/S-S1.csv
+smartphone_rows: 51746
+vehicle_cols: 32
+vehicle_file: Synchronised V abd S datasets/Uncategorised IOVNB Dataset/V-Dataset/V-S1.csv
+vehicle_rows: 51746
