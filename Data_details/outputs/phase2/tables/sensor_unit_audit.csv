@@ -1,0 +1,13 @@
+channel,description,verified_unit,all_mean,all_std,all_min,all_max,stat_mean,stat_std
+acc_x,Accelerometer X,m/s²,0.04228,1.06024,-8.3689,7.5736,0.16191,0.31158
+acc_y,Accelerometer Y,m/s²,0.06223,1.06643,-8.2137,11.3521,-0.11042,0.26571
+acc_z,Accelerometer Z,m/s²,9.84742,0.51318,2.4242,16.1533,9.86057,0.09673
+gyro_x,Gyroscope X (Yaw),rad/s,0.00219,0.09987,-1.1627,1.3556,0.00097,0.01252
+gyro_y,Gyroscope Y (Pitch),rad/s,-0.00725,0.14165,-0.7799,0.633,-0.00242,0.01116
+gyro_z,Gyroscope Z (Roll),rad/s,0.00255,0.05148,-0.5837,0.5546,0.00113,0.00673
+mag_x,Magnetometer X,μT,-15.91452,12.29669,-41.87,10.75,-12.41925,10.70259
+mag_y,Magnetometer Y,μT,-27.94087,2.92432,-39.19,-16.62,-29.71583,2.86754
+mag_z,Magnetometer Z,μT,17.04294,12.97935,-11.0,43.88,14.98091,13.92491
+grav_x,Gravity X,m/s²,-0.00017,0.01949,-0.2561,0.224,0.00037,0.0022
+grav_y,Gravity Y,m/s²,3e-05,0.02292,-0.3498,0.4363,-0.00021,0.00233
+grav_z,Gravity Z,m/s²,9.80655,0.00018,9.7963,9.8066,9.80659,3e-05

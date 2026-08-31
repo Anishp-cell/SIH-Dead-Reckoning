@@ -1,0 +1,5 @@
+outage_duration_s,distance_travelled_m,phase1_endpoint_error_m,phase2_endpoint_error_m,phase1_rmse_m,phase2_rmse_m,phase1_drift_pct,phase2_drift_pct,drift_reduction_pct
+10.0,125.59,61.75,61.49,51.2,50.04,49.17,48.97,0.41
+30.0,300.39,142.44,321.0,89.62,115.28,47.42,106.86,-125.35
+60.0,472.85,284.86,1218.73,184.09,588.79,60.24,257.74,-327.86
+120.0,1228.36,405.86,2564.68,241.68,1168.84,33.04,208.79,-531.93

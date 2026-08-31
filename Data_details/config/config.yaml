@@ -1,0 +1,85 @@
+# Unified Configuration for SIH26168 - IO-VNBD Dataset Exploration & Baseline
+# Supports Phase 1 (Data Exploration & Baseline) and Phase 2 (Preprocessing & Calibration Layer)
+
+paths:
+  repo_root: "IO-VNBD-master"
+  data_cache_dir: "Data_details/data/raw"
+  processed_dir: "Data_details/data/processed"
+  outputs_dir: "Data_details/outputs"
+  logs_dir: "Data_details/outputs/logs"
+  inventory_dir: "Data_details/outputs/inventory"
+  tables_dir: "Data_details/outputs/tables"
+  plots_dir: "Data_details/outputs/plots"
+  reports_dir: "Data_details/outputs/reports"
+
+phase2_paths:
+  outputs_dir: "Data_details/outputs/phase2"
+  calibration_dir: "Data_details/outputs/phase2/calibration"
+  tables_dir: "Data_details/outputs/phase2/tables"
+  plots_dir: "Data_details/outputs/phase2/plots"
+  reports_dir: "Data_details/outputs/phase2/reports"
+  logs_dir: "Data_details/outputs/phase2/logs"
+
+selected_sequence:
+  name: "S1"
+  driver: "A"
+  location: "Coventry, UK"
+  smartphone_file: "Synchronised V abd S datasets/Uncategorised IOVNB Dataset/S-Dataset/S-S1.csv"
+  vehicle_file: "Synchronised V abd S datasets/Uncategorised IOVNB Dataset/V-Dataset/V-S1.csv"
+  description: "Dynamic driving in Coventry including B-Roads, 9 Roundabouts, Reverse maneuvers, and Hard Braking."
+
+stationary_sequence:
+  name: "Vw1"
+  driver: "E"
+  location: "Nuneaton, UK"
+  smartphone_file: "Synchronised V abd S datasets/Uncategorised IOVNB Dataset/S-Dataset/S-Vw1.csv"
+  vehicle_file: "Synchronised V abd S datasets/Uncategorised IOVNB Dataset/V-Dataset/V-Vw1.csv"
+  description: "Stationary vehicle test (34.1 minutes) dedicated for sensor bias and noise analysis."
+
+sampling:
+  expected_frequency_hz: 10.0
+  expected_dt_s: 0.1
+
+blackout_simulation:
+  default_start_time_s: 150.0
+  durations_s: [10.0, 30.0, 60.0, 120.0]
+  primary_test_duration_s: 60.0
+
+geodetic:
+  wgs84_a: 6378137.0
+  wgs84_f: 0.0033528106647474805
+  gravity_mps2: 9.80665
+
+stationary_detection:
+  speed_threshold_mps: 0.5
+  gyro_std_threshold_rads: 0.05
+  min_duration_s: 5.0
+
+phase2_calibration:
+  stationary_speed_threshold_mps: 0.5
+  stationary_gyro_mag_threshold_rads: 0.05
+  stationary_accel_tol_mps2: 0.35
+  stationary_min_duration_s: 5.0
+  attitude_filter_alpha: 0.98
+  gravity_gain: 0.02
+  straight_segment_min_speed_mps: 5.0
+  straight_segment_max_yaw_rate_rads: 0.03
+  straight_segment_min_accel_mps2: 0.3
+  straight_segment_min_duration_s: 2.0
+  orientation_change_cos_tol: 0.95
+
+coordinate_frames:
+  vehicle: "X=Forward, Y=Right, Z=Up"
+  navigation: "ENU (X=East, Y=North, Z=Up)"
+  phone: "Android (X=Right, Y=Top, Z=Screen-Out)"
+
+plotting:
+  figsize_wide: [14, 5]
+  figsize_square: [10, 10]
+  figsize_multi: [14, 12]
+  dpi: 150
+  style: "seaborn-v0_8-whitegrid"
+
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

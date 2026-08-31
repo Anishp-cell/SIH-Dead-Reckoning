@@ -1,0 +1,8 @@
+version,configuration,duration_s,distance_m,endpoint_error_m,rmse_m,max_error_m,drift_pct,improvement_pct
+V0,Raw Phase 1 Baseline (Naive 2D Yaw),60.0,472.9,284.86,184.09,291.13,60.24,0.0
+V1,V0 + Gyroscope Bias Correction,60.0,472.9,620.77,341.48,620.77,131.28,-117.93
+V2,V1 + Accelerometer Bias Calibration,60.0,472.9,620.77,341.48,620.77,131.28,-117.93
+V3,V2 + Quaternion Complementary Attitude,60.0,472.9,1218.73,588.79,1218.73,257.74,-327.86
+V4,V3 + World-Frame Gravity Removal,60.0,472.9,1218.73,588.79,1218.73,257.74,-327.86
+V5,V4 + Phone-to-Vehicle 3D Alignment,60.0,472.9,1218.73,588.79,1218.73,257.74,-327.86
+V6,Full Phase 2 Calibrated Pipeline,60.0,472.9,1218.73,588.79,1218.73,257.74,-327.86
