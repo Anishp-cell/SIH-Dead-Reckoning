@@ -1,0 +1,62 @@
+{
+  "total_sequence_samples": 51746,
+  "window_length_samples": 30,
+  "window_duration_s": 3.0,
+  "stride_samples": 5,
+  "stride_s": 0.5,
+  "overlap_pct": 83.3,
+  "total_extracted_windows": 10344,
+  "tensor_shape": [
+    10344,
+    30,
+    12
+  ],
+  "feature_count": 12,
+  "features": [
+    "acc_fwd_veh",
+    "acc_lat_veh",
+    "acc_up_veh",
+    "gyro_roll_veh",
+    "gyro_pitch_veh",
+    "gyro_yaw_veh",
+    "jerk_fwd",
+    "acc_horiz_norm",
+    "gyro_norm",
+    "ori_pitch_deg",
+    "vibration_energy",
+    "is_stationary"
+  ],
+  "dataset_splits": {
+    "train_windows": 7240,
+    "val_windows": 1551,
+    "test_windows": 1553
+  },
+  "npz_tensor_file": "Data_details\\outputs\\phase3\\processed\\ml_ready_windows_s1.npz",
+  "candidate_window_durations_investigated": [
+    {
+      "duration_s": 1.0,
+      "samples": 10,
+      "pros": "Instantaneous dynamic response",
+      "cons": "Insufficient temporal context"
+    },
+    {
+      "duration_s": 2.0,
+      "samples": 20,
+      "pros": "Captures short maneuvers",
+      "cons": "Misses longer braking curves"
+    },
+    {
+      "duration_s": 3.0,
+      "samples": 30,
+      "pros": "Recommended: captures complete braking/cornering dynamics",
+      "cons": "Moderate memory"
+    },
+    {
+      "duration_s": 5.0,
+      "samples": 50,
+      "pros": "Broad context",
+      "cons": "Higher latency in causal prediction"
+    }
+  ],
+  "status": "Ready for Phase 4 AI/ML Speed Regressor Training"
+}
