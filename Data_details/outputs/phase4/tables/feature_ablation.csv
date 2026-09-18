@@ -1,0 +1,7 @@
+ablation_id,channels_count,description,test_rmse_mps,test_mae_mps,test_r2
+A1_raw_imu_6ch,6,Raw 6-axis IMU only,1.8199,1.2145,0.8701
+A2_plus_jerk_7ch,7,+ Longitudinal Jerk,1.9161,1.264,0.856
+A3_plus_vibration_8ch,8,+ Vibration Energy,1.7874,1.2023,0.8747
+A4_plus_norms_10ch,10,+ Kinematic Norms,1.9517,1.305,0.8506
+A5_plus_pitch_11ch,11,+ Vehicle Pitch Angle,1.7526,1.1631,0.8795
+A6_full_12ch,12,Full 12 Channels (+ ZUPT flag),2.1163,1.421,0.8243

@@ -1,0 +1,30 @@
+{
+  "sequence": "S1 (Coventry, UK)",
+  "total_samples": 51746,
+  "window_length": 30,
+  "stride": 5,
+  "purge_gap_samples": 50,
+  "train_windows": 7239,
+  "val_windows": 1552,
+  "test_windows": 1533,
+  "train_time_range_s": [
+    2.9,
+    3621.899
+  ],
+  "val_time_range_s": [
+    3627.399,
+    4402.902
+  ],
+  "test_time_range_s": [
+    4408.4,
+    5174.399
+  ],
+  "target_source": "Ford Fiesta CAN indicated vehicle speed (v_speed_mps)",
+  "target_stats": {
+    "train_mean_mps": 7.975367069244385,
+    "val_mean_mps": 6.47112512588501,
+    "test_mean_mps": 5.755988597869873,
+    "train_max_mps": 18.905555725097656,
+    "test_max_mps": 15.43055534362793
+  }
+}

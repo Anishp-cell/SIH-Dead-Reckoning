@@ -1,0 +1,30 @@
+{
+  "model_name": "phase4_uncertainty",
+  "architecture": "uncertainty",
+  "parameters": 45394,
+  "input_shape": [
+    1,
+    30,
+    12
+  ],
+  "causal": true,
+  "export_validation": {
+    "torchscript": {
+      "path": "Data_details\\outputs\\phase4\\models\\phase4_uncertainty.pt",
+      "size_bytes": 264724,
+      "max_difference": 0.0,
+      "parity_passed": true
+    },
+    "onnx": {
+      "path": "Data_details\\outputs\\phase4\\models\\phase4_uncertainty.onnx",
+      "size_bytes": 204641,
+      "max_difference": 2.86102294921875e-06,
+      "parity_passed": true
+    }
+  },
+  "test_rmse": 1.7669,
+  "test_mae": 1.1772,
+  "test_r2": 0.8775,
+  "cpu_latency_ms": 2.7026,
+  "gpu_latency_ms": 2.6539
+}

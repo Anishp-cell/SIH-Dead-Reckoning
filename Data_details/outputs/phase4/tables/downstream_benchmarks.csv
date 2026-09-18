@@ -1,0 +1,5 @@
+duration_s,traveled_distance_m,endpoint_error_m,drift_pct,trajectory_rmse_m,phase1_raw_drift_pct,improvement_factor
+10,81.01,157.7,194.67,114.77,49.2,0.25
+30,253.32,361.32,142.63,273.38,47.4,0.33
+60,431.26,76.42,17.72,247.54,60.2,3.4
+120,920.99,771.18,83.73,407.24,33.0,0.39

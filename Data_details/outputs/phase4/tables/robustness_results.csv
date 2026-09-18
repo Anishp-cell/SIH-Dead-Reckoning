@@ -1,0 +1,10 @@
+Perturbation Type,RMSE (m/s),MAE (m/s),P95 Error (m/s),Max Error (m/s),RMSE Degradation (%)
+baseline,1.7669,1.1772,3.81,7.1649,0.0
+gaussian_noise_std_0.2,1.824,1.2381,3.9112,7.8056,3.23
+gaussian_noise_std_0.5,3.0634,2.3321,6.0924,12.7481,73.38
+gaussian_noise_std_1.0,5.7902,4.6819,11.0679,19.12,227.7
+fwd_acc_bias_0.2,1.7304,1.1617,3.764,6.8329,-2.07
+fwd_acc_bias_0.5,1.7243,1.2004,3.8807,6.4663,-2.41
+fwd_acc_bias_1.0,1.9113,1.4376,4.0969,6.7142,8.17
+pothole_transient_shock,1.8375,1.2215,3.9676,7.1649,4.0
+gyro_dropout_15pct,1.9595,1.2787,4.4248,9.294,10.9

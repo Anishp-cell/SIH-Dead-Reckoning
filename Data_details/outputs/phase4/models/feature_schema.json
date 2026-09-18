@@ -1,0 +1,26 @@
+{
+  "channels": 12,
+  "ordered_features": [
+    "acc_fwd_veh",
+    "acc_lat_veh",
+    "acc_up_veh",
+    "gyro_roll_veh",
+    "gyro_pitch_veh",
+    "gyro_yaw_veh",
+    "jerk_fwd",
+    "acc_horiz_norm",
+    "gyro_norm",
+    "ori_pitch_deg",
+    "vibration_energy",
+    "is_stationary"
+  ],
+  "input_tensor_shape": [
+    1,
+    30,
+    12
+  ],
+  "temporal_duration_seconds": 3.0,
+  "sampling_rate_hz": 10.0,
+  "output": "forward_speed_mps",
+  "units": "meters per second"
+}
