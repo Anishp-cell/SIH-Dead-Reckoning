@@ -1,0 +1,3 @@
+condition,threshold,traveled_distance_m,endpoint_error_m,drift_pct,pos_rmse_m,pos_mae_m,pos_max_m,pos_p95_m,vel_rmse_mps,vel_mae_mps,yaw_rmse_deg,yaw_mae_deg,final_yaw_err_deg
+With_NIS_Gating,9.0,191.78,516.06,269.09,294.46,253.93,516.06,489.28,11.8115,11.1182,6.33,5.73,4.42
+Without_NIS_Gating,None,191.78,2972.52,1549.96,1450.98,1115.95,2972.52,2715.39,62.8455,54.8595,5.24,4.82,5.78

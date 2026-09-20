@@ -1,0 +1,2 @@
+mean_nis,median_nis,p95_nis,max_nis,acceptance_rate_pct,total_updates,accepted_updates,rejected_updates,mean_nees_2d,median_nees_2d,p95_nees_2d,nees_in_bounds_pct
+0.943,0.0456,2.9285,59.3273,97.5,599,584,15,381.1988,109.3318,1133.9412,0.33

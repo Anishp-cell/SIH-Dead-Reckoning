@@ -1,0 +1,2 @@
+propagation_latency_ms,kalman_update_latency_ms,total_step_latency_ms,throughput_hz,cpu_headroom_pct
+0.1073,0.0334,1.7488,571.8,98.25
