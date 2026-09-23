@@ -1,0 +1,2 @@
+spatial_candidate_query_ms,temporal_map_matching_ms,map_kalman_updates_ms,total_phase7_step_ms,target_10hz_budget_ms,phase6_total_step_ms,margin_factor
+0.062,0.11,0.014,2.415,100.0,1.63,41.4

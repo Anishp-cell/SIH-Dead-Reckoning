@@ -1,0 +1,2 @@
+ins_prediction_latency_ms,nhc_update_latency_ms,zupt_zaru_latency_ms,total_step_latency_ms,throughput_hz,cpu_headroom_pct
+0.0923,0.0539,0.0489,1.5866,630.3,98.41
