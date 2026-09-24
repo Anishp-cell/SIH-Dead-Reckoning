@@ -1,0 +1,10 @@
+filter_name,noise_reduction_pct,correlation_fidelity,peak_preservation_pct,rms_ratio,residual_rms_mps2,hf_attenuation_pct
+Moving_Average_W5,21.06,0.7893,38.09,0.7902,0.6547,96.87
+Butterworth_Causal_0.5Hz,23.5,0.6878,34.17,0.7659,0.7785,99.99
+Butterworth_Causal_1.0Hz,20.45,0.7061,40.55,0.7963,0.7611,99.82
+Butterworth_Causal_1.5Hz,17.67,0.7163,55.53,0.824,0.7528,98.93
+Butterworth_Causal_2.0Hz,14.91,0.7349,75.2,0.8514,0.7337,96.0
+Butterworth_Causal_3.0Hz,9.67,0.7949,86.32,0.9036,0.6572,76.21
+Butterworth_Offline_1.5Hz,19.48,0.8418,44.4,0.806,0.577,99.96
+Hampel_Filter,3.75,0.9538,100.0,0.9626,0.3205,19.75
+Wavelet_DWT_sym4,21.56,0.8135,84.3,0.7853,0.621,95.6

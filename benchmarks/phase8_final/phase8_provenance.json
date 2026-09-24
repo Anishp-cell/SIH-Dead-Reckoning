@@ -1,0 +1,46 @@
+{
+  "project": "SIH26168 ISRO - AI-ML Based Intelligent Dead Reckoning System",
+  "phase": 8,
+  "timestamp_generated": "2026-09-24T13:21:13Z",
+  "data_source": "IO-VNBD Dataset (Coventry S1 sequence)",
+  "gnss_source": "SYNTHETIC_GNSS (Controlled 1 Hz Smartphone Consumer GNSS Model)",
+  "reference_source": "VBOX / RTK High-Precision Calibrated Ground Truth (Evaluation only)",
+  "initialization_mode": "MODE_B_OPERATIONAL (Realistic GNSS fix + static accel leveling; reference-free)",
+  "provenance_assertions_passed": true,
+  "zero_future_leakage_verified": true,
+  "outage_benchmarks": {
+    "10s_blackout": {
+      "outage_duration_s": 10.0,
+      "pre_window_s": 15.0,
+      "post_window_s": 20.0,
+      "total_window_s": 45.0
+    },
+    "30s_blackout": {
+      "outage_duration_s": 30.0,
+      "pre_window_s": 15.0,
+      "post_window_s": 20.0,
+      "total_window_s": 65.0
+    },
+    "60s_blackout": {
+      "outage_duration_s": 60.0,
+      "pre_window_s": 15.0,
+      "post_window_s": 20.0,
+      "total_window_s": 95.0
+    },
+    "120s_blackout": {
+      "outage_duration_s": 120.0,
+      "pre_window_s": 15.0,
+      "post_window_s": 30.0,
+      "total_window_s": 165.0
+    }
+  },
+  "scientific_claim_labels": {
+    "p7_mode_b_baseline": "REFERENCE",
+    "p8_operational_fusion": "MEASURED",
+    "finite_difference_jacobians": "MEASURED",
+    "discrete_observability_rank": "MEASURED",
+    "runtime_profile": "MEASURED",
+    "sih_target_10_percent": "LIMITATION",
+    "project_engineering_thresholds": "ASSUMED"
+  }
+}

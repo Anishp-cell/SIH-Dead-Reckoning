@@ -1,0 +1,10 @@
+location,duration_s,outage_start_s,outage_max_err_m,outage_cross_err_m,post_recovery_err_m
+Loc_1_Stop_and_Go_4600s,10,4600.0,64.83,1.38,21.85
+Loc_1_Stop_and_Go_4600s,30,4600.0,64.83,1.38,2.93
+Loc_1_Stop_and_Go_4600s,60,4600.0,64.83,1.38,26.98
+Loc_2_Cruising_4750s,10,4750.0,693.24,323.84,2728.31
+Loc_2_Cruising_4750s,30,4750.0,2732.49,2279.7,1879.3
+Loc_2_Cruising_4750s,60,4750.0,2827.02,2351.89,5725.16
+Loc_3_Approaching_Turn_4900s,10,4900.0,2454.07,939.59,8359.91
+Loc_3_Approaching_Turn_4900s,30,4900.0,8397.67,5299.56,17709.3
+Loc_3_Approaching_Turn_4900s,60,4900.0,23755.18,17981.25,34983.72

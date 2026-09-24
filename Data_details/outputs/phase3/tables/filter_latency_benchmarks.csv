@@ -1,0 +1,6 @@
+filter,mode,time_per_sample_us,latency_ms,throughput_hz,state_size_bytes,target_10hz_headroom
+Butterworth Causal (Order 2),Mode B (Real-Time Streaming),12.0,0.012,83347,64,8334x
+Moving Average (W=5),Mode B (Real-Time Causal),0.06,0.0001,17001020,40,1700102x
+Hampel Robust Filter,Mode B (Sliding Window),67.97,0.068,14712,56,1471x
+"Wavelet (sym4, L=3)",Mode A/B (Windowed DWT),0.37,0.0004,2739650,512,273965x
+Butterworth Offline (filtfilt),Mode A (Zero-Phase / Non-Causal),0.39,0.0004,2548614,1024,254861x (Offline Only)

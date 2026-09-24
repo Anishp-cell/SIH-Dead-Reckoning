@@ -1,0 +1,5 @@
+scenario,description,duration_s,traveled_dist_m,p6_drift_pct,p7_drift_pct,p6_endpoint_error_m,p7_endpoint_error_m,p6_cross_track_rmse_m,p7_cross_track_rmse_m,p6_along_track_rmse_m,p7_along_track_rmse_m,p6_yaw_rmse_deg,p7_yaw_rmse_deg,p7_map_confidence,p7_ct_accepted_rate_pct,p7_hd_accepted_rate_pct
+Stop_and_Go_Traffic,Standstill traffic followed by acceleration,60.0,191.8,41.15,41.07,78.91,78.76,5.49,0.48,72.88,73.01,5.71,1.07,0.962,98.3,26.2
+Steady_Cruising,Continuous medium-speed cruising (35-45 km/h),60.0,328.9,1406.85,1300.89,4627.46,4278.92,1695.15,1526.23,299.04,232.18,98.19,102.49,0.165,17.3,13.0
+Sharp_Cornering_Turn,Sharp urban cornering turn onto cross-street,50.0,599.1,1623.05,1624.79,9723.83,9734.23,604.7,1205.74,4032.51,3897.79,60.01,84.54,0.177,19.8,9.6
+Long_Straight_Highway,Extended straight road segment,60.0,183.1,114.87,201.17,210.35,368.38,50.99,75.16,72.04,62.05,8.88,14.28,0.723,77.6,53.3

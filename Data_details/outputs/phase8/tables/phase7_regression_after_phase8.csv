@@ -1,0 +1,5 @@
+duration_s,distance_m,measured_drift_pct,expected_drift_pct,measured_endpt_m,expected_endpt_m,cross_track_rmse_m,yaw_rmse_deg,baseline_reproduced
+10,99.0,16.7,16.8,16.53,16.57,0.58,0.9,True
+30,191.8,41.0,41.0,78.56,78.62,0.66,0.95,True
+60,191.8,41.0,41.1,78.7,78.76,0.48,1.07,True
+120,661.4,146.8,144.8,970.82,958.01,218.53,9.01,False

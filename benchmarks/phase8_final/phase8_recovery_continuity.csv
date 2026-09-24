@@ -1,0 +1,4 @@
+metric,soft_recovery,hard_reset,project_threshold,status
+Max Position Step (m),0.006,32.181,3.5,PASSED
+Max Velocity Step (m/s),0.006,0.01,1.0,PASSED
+Pseudo-Accel Spike (m/s^2),0.056,0.1,2.5,PASSED

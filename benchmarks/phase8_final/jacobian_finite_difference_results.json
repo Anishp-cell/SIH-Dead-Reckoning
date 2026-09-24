@@ -1,0 +1,29 @@
+{
+  "position_3d": {
+    "max_abs_error": 5.9368176152929664e-08,
+    "max_rel_error": 2.981473785850665e-07,
+    "matrix_shape": [
+      3,
+      15
+    ],
+    "passed": true
+  },
+  "velocity_3d": {
+    "max_abs_error": 6.07747097092215e-09,
+    "max_rel_error": 4.587898059821601e-07,
+    "matrix_shape": [
+      3,
+      15
+    ],
+    "passed": true
+  },
+  "velocity_2d": {
+    "max_abs_error": 6.07747097092215e-09,
+    "max_rel_error": 4.587898059821601e-07,
+    "matrix_shape": [
+      2,
+      15
+    ],
+    "passed": true
+  }
+}

@@ -1,0 +1,8 @@
+event_name,start_time_s,end_time_s,duration_s,samples,mean_speed_mps,accel_dominant_freq_hz,accel_total_power,accel_hf_energy_ratio_pct,gyro_dominant_freq_hz,gyro_total_power,gyro_hf_energy_ratio_pct,peak_accel_mps2,rms_accel_mps2,crest_factor
+1_Stationary,19.4,34.3,14.9,150,0.0,2.467,0.00407,37.38,2.267,3e-05,55.17,10.05,9.87,1.02
+2_Smooth_Acceleration,100.0,109.9,9.9,100,0.71,0.5,0.14652,24.86,0.2,0.01331,5.62,11.54,10.05,1.15
+3_Hard_Acceleration,2902.0,2911.9,9.9,100,1.76,3.0,0.24506,42.92,1.6,0.00286,14.36,11.8,9.96,1.18
+4_Hard_Braking,1139.9,1149.8,9.9,100,1.78,0.2,0.1416,53.35,0.1,0.04965,1.48,10.87,10.03,1.08
+5_Sharp_Turn,4962.9,4972.8,9.9,100,3.35,2.3,0.85999,29.86,0.5,0.02631,25.66,12.29,10.16,1.21
+6_Road_Bump_Pothole,271.0,276.9,5.9,60,3.69,1.0,1.19821,55.86,0.667,0.01604,34.11,16.29,10.08,1.62
+7_High_Vibration_Cruising,300.0,314.9,14.9,150,2.52,2.933,0.1237,53.81,0.2,0.00217,33.49,11.07,9.96,1.11

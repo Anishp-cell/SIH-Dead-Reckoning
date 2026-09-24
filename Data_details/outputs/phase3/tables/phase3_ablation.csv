@@ -1,0 +1,6 @@
+ablation_id,description,filter_type,endpoint_error_m,rmse_m,drift_pct,relative_improvement_pct
+A0,Audited Baseline (No Filter),none,193.7,134.83,40.96,0.0
+A1,+ Butterworth Causal LP (1.5 Hz),butterworth_causal,209.5,133.73,44.31,-8.18
+A2,+ Robust Hampel Outlier Handling,hampel,227.88,167.16,48.19,-17.65
+A3,"+ Wavelet Denoising (sym4, L=3)",wavelet,191.76,132.12,40.55,1.0
+A4,+ Best Combined Pipeline (Hampel + Butterworth),combined_best,242.06,167.27,51.19,-24.98
