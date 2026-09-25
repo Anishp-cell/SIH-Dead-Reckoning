@@ -145,3 +145,42 @@ class MapMeasurementModel:
 
         return nu_clamped, H, R, nis, accepted
 
+    def compute_along_track_update(
+        self,
+        match: MapMatchResult,
+        P_15x15: np.ndarray,
+        target_along_m: float,
+        variance_along_m2: float = 1.0,
+    ) -> Tuple[float, np.ndarray, float, float, bool]:
+        """
+        Computes signed along-track road spline innovation, 1x15 Jacobian,
+        innovation variance S, NIS, and gating decision.
+
+        Along-track innovation: nu = target_along_m - current_along_m
+        Jacobian H: tangent vector in ENU plane: [t_E, t_N, 0, 0_{1x12}]
+        """
+        if not match.accepted or match.matched_segment_id is None:
+            return 0.0, np.zeros((1, 15)), 1e6, 0.0, False
+
+        current_along_m = float(match.along_track_position)
+        nu = float(target_along_m - current_along_m)
+
+        psi = match.road_heading_enu
+        t_E = float(np.cos(psi))
+        t_N = float(np.sin(psi))
+
+        H = np.zeros((1, 15), dtype=np.float64)
+        H[0, 0] = t_E
+        H[0, 1] = t_N
+
+        c_map = max(1e-4, match.map_confidence)
+        R = max(0.25, float(variance_along_m2) / (c_map**2))
+
+        S = float((H @ P_15x15 @ H.T).item() + R)
+        nis = float((nu**2) / S)
+
+        accepted = bool(nis <= self.chi2_threshold_1d)
+        nu_clamped = float(np.clip(nu, -10.0, 10.0))
+
+        return nu_clamped, H, R, nis, accepted
+

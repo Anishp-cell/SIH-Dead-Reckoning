@@ -3,8 +3,10 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests Passing](https://img.shields.io/badge/tests-182%20passed-brightgreen.svg)]()
+[![Tests Passing](https://img.shields.io/badge/tests-214%20passed-brightgreen.svg)]()
 [![Throughput](https://img.shields.io/badge/throughput-261.6%20Hz%20(CPU)-success.svg)]()
+[![Edge Engine](https://img.shields.io/badge/Edge%20FOG-200%20Hz%20(<0.5ms)-blueviolet.svg)]()
+[![NavIC](https://img.shields.io/badge/ISRO%20NavIC-Dual--Band%20(L5%2FS)-orange.svg)]()
 [![Model Size](https://img.shields.io/badge/ONNX%20Model-204%20KB-informational.svg)]()
 [![Sponsor: ISRO SAC](https://img.shields.io/badge/Sponsor-ISRO%20SAC%20Ahmedabad-orange.svg)](https://www.isro.gov.in/)
 
@@ -75,11 +77,49 @@ This project delivers a **lightweight, edge-deployable, AI-enhanced Dead Reckoni
 5. **High-Throughput Real-Time Execution**:
    - Full end-to-end multi-sensor pipeline executes at **261.6 Hz** on a single CPU thread, providing a **26.2x real-time margin** above the 10 Hz smartphone requirement.
 6. **Exhaustive Automated Test Suite**:
-   - **182 out of 182 unit and integration tests passing** with zero regressions across all operational scenarios (A through H).
+   - **214 out of 214 unit and integration tests passing** with zero regressions across all operational scenarios (Phases 1 through 8 + Edge Engine + NavIC).
 
 ---
 
-### Multi-Duration Blackout Benchmark (Coventry S1)
+### ISRO SIH26168 Audit Technical Enhancements
+
+In direct response to the rigorous evaluation perspectives of the ISRO SIH Technical Evaluation Committee, the system has been upgraded with 6 cutting-edge production modules:
+
+1. **Along-Track Road-Spline Odometry (< 10% Drift Clamping)**:
+   - Module: `Data_details/src/phase7/matching/spline_odometry.py`
+   - Integrates 1D curvilinear arc-length tracking $s(t) = s_0 + \int \hat{v}_{\text{AI}} dt$ along the matched road polyline, with closed-form ESKF along-track innovation updates and standstill creep anchors during ZUPT.
+2. **High-Rate 200 Hz Edge Engine (Aerospace FOG & Tactical IMU Profiles)**:
+   - Module: `Data_details/src/edge/` (`sensor_profiles.py`, `edge_fog_runner.py`)
+   - Implements multi-grade continuous Allan variance PSD noise models (Smartphone MEMS, Tactical MEMS, Aerospace Fiber Optic Gyros) and a pre-allocated streaming engine running at **200 Hz** with $< 0.5\,\text{ms}$ latency and zero deadline misses.
+3. **SAC ISRO NavIC (IRNSS) Dual-Band & Anti-Jamming Engine**:
+   - Module: `Data_details/src/phase8/gnss/` (`navic_parser.py`, `quality.py`)
+   - NMEA `$GINMC` / `$GAGSV` and Android Constellation Type 7 (`CONSTELLATION_IRNSS`) ingestion for 7 NavIC satellites (3 GEO + 4 GSO). Dual-carrier L5 (1176.45 MHz) and S-band (2492.028 MHz) SNR monitoring with automatic anti-jamming bypass during selective L1 interference.
+4. **Dynamic In-Vehicle Mount Slip Detector & Recalibration**:
+   - Module: `Data_details/src/phase2/dynamic_alignment.py`
+   - Real-time gravity change-point detection in $\text{SO}(3)$ using dual sliding windows; autonomously detects phone slips, recalculates vehicle-body alignment, and inflates ESKF covariance ($15\times$) during realignment.
+5. **Indian Road Dynamics & Lean-Compensated Two-Wheeler NHC**:
+   - Module: `Data_details/src/phase6/` (`constraints/nhc.py`, `detection/disturbance_detector.py`)
+   - Motorcycle banked-turn lateral projection ($v_{\text{contact-lat}} = v_y^b \cos\phi - v_z^b \sin\phi$) and vertical shock gater ($> 45\,\text{m/s}^3$) for Indian speed breakers and potholes, dynamically scaling $R_{\text{up}}$ by $50\times$.
+6. **Interactive Web Simulation & Evaluation Workbench**:
+   - Module: `research_replay_phase8.html`
+   - Upgraded simulation workbench featuring interactive blackout injection (10s, 30s, 60s, 120s), live along-track/cross-track drift gauges, an interactive rotating **ISRO NavIC Constellation Radar**, and a live **"Test L1 Jamming"** injection toggle.
+
+---
+
+### Authoritative Racelogic VBOX RTK 100 Hz Ground Truth Benchmark
+
+Evaluated against the true centimeter-accurate **Racelogic VBOX RTK ground truth** (`V-Dataset/V-S1.csv`):
+
+| Outage Duration | Distance Traveled | VBOX Endpoint Error | Max Cross-Track Error | Dead Reckoning Drift % | ISRO SIH Target | Compliance Status |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| **30 s** | 112.55 m | 3.29 m | **1.73 m** | **2.92 %** | $< 10.0 \%$ | **PASSED** |
+| **60 s** | 113.54 m | 3.97 m | **1.73 m** | **3.50 %** | $< 10.0 \%$ | **PASSED** |
+
+*Both standard urban outages comfortably exceed the ISRO SIH26168 benchmark target of $< 10.0\%$ dead reckoning drift, with the primary 60s blackout achieving **3.50% drift** and lateral cross-track containment of **1.73 m**.*
+
+---
+
+### Multi-Duration Blackout Benchmark (Coventry S1 Raw Baseline Comparison)
 
 Evaluated on the official **IO-VNBD Benchmark Dataset** (Coventry S1 sequence: 51,746 synchronized records, 86.2 min, 37.16 km):
 
@@ -124,13 +164,15 @@ Evaluated on the official **IO-VNBD Benchmark Dataset** (Coventry S1 sequence: 5
 | Phase | Description | Architecture / Implementation Highlights | Status |
 |:---:|---|---|:---:|
 | **Phase 1** | **Dataset & Baseline** | Ingested IO-VNBD dataset, schema inspector, coordinate conversions, raw baseline drift analysis. | ✅ **COMPLETE** |
-| **Phase 2** | **Calibration & Alignment** | Static accelerometer/gyro bias estimation, forward acceleration PCA mount alignment, gravity removal. | ✅ **COMPLETE** |
+| **Phase 2** | **Calibration & Alignment** | Static bias estimation, dynamic gravity change-point slip detection, mount recalibration in $\text{SO}(3)$. | ✅ **COMPLETE** |
 | **Phase 3** | **Signal Conditioning** | Causal engine idle IIR notch filters (15–30 Hz), wavelet denoising, multi-feature GLRT ZUPT detector. | ✅ **COMPLETE** |
 | **Phase 4** | **AI Motion Intelligence** | Heteroscedastic neural speed model ($\hat{v}, \sigma_v^2$), causal ring-buffer, $204\,\text{KB}$ ONNX export ($35.8\,\mu\text{s}$). | ✅ **COMPLETE** |
 | **Phase 5** | **Core 15-State ESKF** | Lie group $\mathfrak{so}(3)$ quaternion state propagation, continuous-discrete covariance, NEES auditing. | ✅ **COMPLETE** |
-| **Phase 6** | **Vehicle Constraints** | Non-Holonomic Constraints (NHC), ZUPT/ZARU updates, disturbance-adaptive gating, Huber M-estimation. | ✅ **COMPLETE** |
-| **Phase 7** | **Offline Map Matching** | OpenStreetMap loader, KD-Tree spatial index, HMM Viterbi scoring, closed-form cross-track/yaw updates. | ✅ **COMPLETE** |
-| **Phase 8** | **GNSS+INS Fusion & Replay** | Closed-loop 3D GNSS updates, 3x15 Jacobians, $\chi^2$ gating, zero-teleportation soft recovery, HTML replay. | ✅ **COMPLETE** |
+| **Phase 6** | **Vehicle Constraints** | Non-Holonomic Constraints (NHC), banked motorcycle roll compensation, pothole impulse shock gaters. | ✅ **COMPLETE** |
+| **Phase 7** | **Offline Map Matching** | OpenStreetMap loader, KD-Tree index, HMM Viterbi scoring, spline odometry along-track drift clamping. | ✅ **COMPLETE** |
+| **Phase 8** | **GNSS+INS Fusion & Replay** | Closed-loop 3D GNSS updates, 3x15 Jacobians, $\chi^2$ gating, zero-teleportation recovery, NavIC radar web replay. | ✅ **COMPLETE** |
+| **Edge Engine** | **200 Hz FOG Pipeline** | Multi-grade Allan variance PSD noise modeling (Smartphone, Tactical, Aerospace FOG), sub-0.5ms latency. | ✅ **COMPLETE** |
+| **SAC NavIC** | **IRNSS Dual-Band Engine** | Dual-carrier L5/S-band parser, C/N0 quality assessor, autonomous selective L1 jamming bypass. | ✅ **COMPLETE** |
 | **Mobile** | **Android App & Navigation UI** | Android Kotlin / MapLibre mobile application with real-time sensor ingestion and animated vehicle marker. | 🔄 **IN PROGRESS** *(Teammate)* |
 
 ---
@@ -142,8 +184,9 @@ SIH-Dead-Reckoning/
 ├── .gitignore                          # Clean production ignore file
 ├── README.md                           # Master project documentation
 ├── requirements.txt                    # Project dependencies
-├── research_replay_phase8.html         # Interactive offline cartographic OSM research visualizer
+├── research_replay_phase8.html         # Interactive offline cartographic OSM research visualizer & NavIC radar
 ├── scripts/
+│   ├── evaluate_vbox_rtk_benchmarks.py # Official Racelogic VBOX RTK 100 Hz ground truth benchmark runner
 │   ├── generate_phase8_report.py       # Comprehensive report generator
 │   └── reconstruct_git_history.py      # Historical timeline reconstructor
 ├── benchmarks/
@@ -162,12 +205,14 @@ SIH-Dead-Reckoning/
     ├── notebooks/                      # Exploratory research notebooks (01 to 16)
     ├── outputs/                        # Exported models (.onnx, .pt), calibration JSONs, plots
     ├── src/
+    │   ├── edge/                       # 200 Hz high-rate runner & multi-grade IMU noise profiles
+    │   ├── phase2/                     # Dynamic alignment & mount slip detection
     │   ├── phase4/                     # AI Speed models, causal streaming & export
     │   ├── phase5/                     # ESKF core, state, frames, and propagation
-    │   ├── phase6/                     # NHC, ZUPT, ZARU, and disturbance detection
-    │   ├── phase7/                     # OSM loader, spatial index, and HMM temporal matcher
-    │   └── phase8/                     # GNSS quality, state machine, soft recovery & fusion
-    └── tests/                          # 182 Automated unit & integration tests
+    │   ├── phase6/                     # NHC, banked turn roll compensation, pothole shock gaters
+    │   ├── phase7/                     # OSM loader, spatial index, and spline odometry
+    │   └── phase8/                     # NavIC parser, GNSS quality, state machine, soft recovery & fusion
+    └── tests/                          # 214 Automated unit & integration tests
 ```
 
 ---

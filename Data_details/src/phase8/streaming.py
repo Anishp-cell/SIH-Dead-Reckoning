@@ -20,7 +20,12 @@ from Data_details.src.phase5.core.frames import enu_yaw_to_geographic_rad
 from Data_details.src.phase4.streaming import CausalStreamingInferenceEngine
 from Data_details.src.phase7.matching.temporal_matcher import TemporalMapMatcher, MapMatchResult
 from Data_details.src.phase7.matching.map_measurement import MapMeasurementModel
-from Data_details.src.phase7.matching.map_update import apply_map_cross_track_update, apply_map_heading_update
+from Data_details.src.phase7.matching.map_update import (
+    apply_map_cross_track_update,
+    apply_map_heading_update,
+    apply_map_along_track_update,
+)
+from Data_details.src.phase7.matching.spline_odometry import RoadSplineOdometry, SplineOdometryConfig
 
 from .core.phase8_eskf import Phase8ESKF
 from .gnss.coordinate import geodetic_to_enu, gps_vel_to_enu_velocity
@@ -68,16 +73,18 @@ class Phase8NavigationEstimate:
     along_track_position_m: float        # Distance along segment (m)
     map_confidence: float                # Map confidence score [0, 1]
     candidate_count: int                 # Number of candidate roads
-    candidate_probability: float         # Top candidate posterior
-    map_cross_track_accepted: bool       # Cross-track Kalman update applied
-    map_heading_accepted: bool           # Heading Kalman update applied
-    cross_track_nis: float
-    heading_nis: float
+    candidate_probability: float = 0.0   # Top candidate posterior
+    map_cross_track_accepted: bool = False # Cross-track Kalman update applied
+    map_heading_accepted: bool = False   # Heading Kalman update applied
+    map_along_track_accepted: bool = False # Along-track road-spline Kalman update applied
+    cross_track_nis: float = 0.0
+    heading_nis: float = 0.0
+    along_track_nis: float = 0.0
 
     # Physical Constraints
-    is_stationary: bool
-    nhc_confidence: float
-    filter_healthy: bool
+    is_stationary: bool = False
+    nhc_confidence: float = 1.0
+    filter_healthy: bool = True
 
 
 class Phase8StreamingEngine:
@@ -97,8 +104,10 @@ class Phase8StreamingEngine:
         enable_map_updates: bool = True,
         enable_cross_track_update: bool = True,
         enable_heading_update: bool = True,
+        enable_along_track_update: bool = True,
         enable_gnss_pos: bool = True,
         enable_gnss_vel: bool = True,
+        spline_odometry: Optional[RoadSplineOdometry] = None,
     ):
         self.ref_lat_deg = ref_lat_deg
         self.ref_lon_deg = ref_lon_deg
@@ -108,10 +117,12 @@ class Phase8StreamingEngine:
         self.ai_engine = ai_engine
         self.matcher = map_matcher
         self.map_model = map_model or MapMeasurementModel()
+        self.spline_odometry = spline_odometry or RoadSplineOdometry()
 
         self.enable_map_updates = bool(enable_map_updates)
         self.enable_cross_track_update = bool(enable_cross_track_update)
         self.enable_heading_update = bool(enable_heading_update)
+        self.enable_along_track_update = bool(enable_along_track_update)
         self.enable_gnss_pos = bool(enable_gnss_pos)
         self.enable_gnss_vel = bool(enable_gnss_vel)
 
@@ -145,6 +156,7 @@ class Phase8StreamingEngine:
             self.matcher.reset()
         self.quality_assessor.reset()
         self.state_machine.reset(initial_state=GNSSState.HEALTHY, initial_time=initial_timestamp)
+        self.spline_odometry.reset()
         self.last_gnss_timestamp = initial_timestamp
         self.last_match = None
 
@@ -258,8 +270,10 @@ class Phase8StreamingEngine:
         # 7. Soft Map Updates
         ct_accepted = False
         hd_accepted = False
+        al_accepted = False
         ct_nis = 0.0
         hd_nis = 0.0
+        al_nis = 0.0
 
         if self.enable_map_updates and match is not None and match.accepted:
             if self.enable_cross_track_update:
@@ -292,6 +306,39 @@ class Phase8StreamingEngine:
                     self.map_model,
                     v_forward_mps=v_fwd,
                 )
+
+            # Along-track road-spline update during outage
+            is_outage_mode = is_synthetic_outage or (self.state_machine.current_state in [GNSSState.OUTAGE, GNSSState.SUSPECT])
+            if is_outage_mode:
+                if not self.spline_odometry.is_active:
+                    self.spline_odometry.start_outage(match, timestamp)
+                target_along, var_along, valid = self.spline_odometry.step(
+                    ai_speed_val,
+                    sigma_val,
+                    timestamp,
+                    match,
+                    is_stationary=is_stat,
+                    dt_override=dt,
+                )
+                if valid and self.enable_along_track_update:
+                    (
+                        self.eskf.state,
+                        self.eskf.P,
+                        _,
+                        _,
+                        al_nis,
+                        al_accepted,
+                    ) = apply_map_along_track_update(
+                        self.eskf.state,
+                        self.eskf.P,
+                        match,
+                        self.map_model,
+                        target_along_m=target_along,
+                        variance_along_m2=var_along,
+                    )
+        else:
+            if not is_synthetic_outage and self.state_machine.current_state == GNSSState.HEALTHY:
+                self.spline_odometry.reset()
 
         # 8. GNSS Processing & Fusion (Phase 8)
         gnss_pos_enu = np.array([np.nan, np.nan, np.nan])
@@ -463,8 +510,10 @@ class Phase8StreamingEngine:
             candidate_probability=match.candidate_probability if match else 0.0,
             map_cross_track_accepted=ct_accepted,
             map_heading_accepted=hd_accepted,
+            map_along_track_accepted=al_accepted,
             cross_track_nis=ct_nis,
             heading_nis=hd_nis,
+            along_track_nis=al_nis,
             is_stationary=is_stat,
             nhc_confidence=dist_report.c_nhc,
             filter_healthy=filter_healthy,

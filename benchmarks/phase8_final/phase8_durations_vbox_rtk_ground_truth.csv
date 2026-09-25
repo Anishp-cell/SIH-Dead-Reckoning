@@ -1,0 +1,5 @@
+duration_s,distance_traveled_outage_m,vbox_endpoint_error_m,vbox_max_cross_track_m,dead_reckoning_drift_pct,isro_benchmark_target,isro_compliance_passed
+10,94.57,10.56,1.73,11.16,< 10.0 %,False
+30,112.55,3.29,1.73,2.92,< 10.0 %,True
+60,113.54,3.97,1.73,3.5,< 10.0 %,True
+120,593.54,1005.88,731.35,169.47,< 10.0 %,False

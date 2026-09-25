@@ -24,6 +24,11 @@ class GNSSQualityReport:
     jump_detected: bool = False
     step_jump_m: float = 0.0
     apparent_vel_mps: float = 0.0
+    mean_cn0_dbhz: Optional[float] = None
+    navic_active: bool = False
+    navic_sats: int = 0
+    jamming_detected: bool = False
+    navic_resilient: bool = False
 
 
 class GNSSQualityAssessor:
@@ -59,6 +64,10 @@ class GNSSQualityAssessor:
         num_sats: int,
         speed_mps: Optional[float] = None,
         bearing_deg: Optional[float] = None,
+        mean_cn0_dbhz: Optional[float] = None,
+        navic_sats: int = 0,
+        l1_jammed: bool = False,
+        navic_resilient: bool = False,
     ) -> GNSSQualityReport:
         """
         Assesses a new GNSS sample. Returns GNSSQualityReport.
@@ -72,9 +81,16 @@ class GNSSQualityAssessor:
         if not np.isfinite(stated_acc_m) or stated_acc_m <= 0.0:
             reasons.append("INVALID_STATED_ACCURACY")
 
-        # 2. Minimum Satellite threshold
-        if num_sats < self.min_sats:
-            reasons.append(f"INSUFFICIENT_SATELLITES_{num_sats}_LT_{self.min_sats}")
+        # 2. Minimum Satellite threshold (exempt if NavIC S-band resilient)
+        effective_sats = num_sats + navic_sats
+        if l1_jammed and navic_resilient and navic_sats >= 2:
+            pass  # NavIC S-band provides valid regional fix despite L1 jamming
+        elif effective_sats < self.min_sats:
+            reasons.append(f"INSUFFICIENT_SATELLITES_{effective_sats}_LT_{self.min_sats}")
+
+        # 2b. C/N0 Signal Strength Check
+        if mean_cn0_dbhz is not None and mean_cn0_dbhz < 22.0 and not navic_resilient:
+            reasons.append(f"CRITICAL_LOW_CN0_{mean_cn0_dbhz:.1f}dBHz")
 
         # 3. Maximum Stated Accuracy threshold
         if stated_acc_m > self.max_stated_acc_m:
@@ -131,4 +147,9 @@ class GNSSQualityAssessor:
             jump_detected=jump_detected,
             step_jump_m=step_dist,
             apparent_vel_mps=apparent_vel,
+            mean_cn0_dbhz=mean_cn0_dbhz,
+            navic_active=bool(navic_sats > 0 or navic_resilient),
+            navic_sats=navic_sats,
+            jamming_detected=l1_jammed,
+            navic_resilient=navic_resilient,
         )

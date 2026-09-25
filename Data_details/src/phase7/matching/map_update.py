@@ -98,3 +98,45 @@ def apply_map_heading_update(
 
     state_plus = NominalState(p=p_new, v=v_new, q=q_new, ba=ba_new, bg=bg_new)
     return state_plus, P_plus, nu, S, nis, True
+
+
+def apply_map_along_track_update(
+    state: NominalState,
+    P: np.ndarray,
+    match: MapMatchResult,
+    model: MapMeasurementModel,
+    target_along_m: float,
+    variance_along_m2: float = 1.0,
+) -> Tuple[NominalState, np.ndarray, float, float, float, bool]:
+    """
+    Applies scalar along-track road spline constraint update:
+    z_s = target_along, h(x) = current_along -> nu = target_along - current_along.
+    """
+    nu, H, R, nis, accepted = model.compute_along_track_update(
+        match, P, target_along_m, variance_along_m2=variance_along_m2
+    )
+
+    if not accepted:
+        H_P = H @ P
+        S = float((H_P @ H.T).item() + R)
+        return state.copy(), P.copy(), nu, S, nis, False
+
+    H_P = H @ P
+    S = float((H_P @ H.T).item() + R)
+
+    K = (P @ H.T) / S
+    delta_x = (K * nu).ravel()
+
+    I15 = np.eye(15, dtype=np.float64)
+    I_KH = I15 - K @ H
+    P_plus = I_KH @ P @ I_KH.T + (K * R) @ K.T
+    P_plus = 0.5 * (P_plus + P_plus.T)
+
+    p_new = state.p + delta_x[0:3]
+    v_new = state.v + delta_x[3:6]
+    q_new = inject_small_angle_error(state.q, delta_x[6:9])
+    ba_new = state.ba + delta_x[9:12]
+    bg_new = state.bg + delta_x[12:15]
+
+    state_plus = NominalState(p=p_new, v=v_new, q=q_new, ba=ba_new, bg=bg_new)
+    return state_plus, P_plus, nu, S, nis, True

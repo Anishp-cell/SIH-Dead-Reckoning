@@ -273,6 +273,62 @@
           <span id="txt-map-conf" class="metric-val" style="color:#10b981;">0.98</span>
         </div>
       </div>
+    <!-- ISRO NavIC IRNSS Constellation Radar Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>ISRO NavIC (IRNSS) Radar</span>
+        <span id="navic-status-badge" style="color:#10b981; font-weight:700; font-size:0.7rem;">7 SATS LOCKED</span>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <canvas id="navic-radar" width="110" height="110" style="background:#060d1a; border-radius:50%; border:1px solid #334155; flex-shrink:0;"></canvas>
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px; font-size:0.72rem;">
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-secondary);">Carrier Bands:</span>
+            <span style="color:#38bdf8; font-weight:600;">L5 (1.17G) + S (2.49G)</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-secondary);">Avg C/N₀:</span>
+            <span id="txt-navic-cn0" style="color:#10b981; font-weight:700; font-family:monospace;">41.8 dB-Hz</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span style="color:var(--text-secondary);">Anti-Jamming:</span>
+            <span id="txt-jamming-status" style="color:#10b981; font-weight:600;">RESILIENT</span>
+          </div>
+          <button id="btn-toggle-jamming" style="margin-top:4px; font-size:0.7rem; padding:3px 6px; background:#1e293b; border:1px solid #475569; color:#f8fafc; border-radius:4px; cursor:pointer;">⚡ Test L1 Jamming</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dynamic Outage Injector & Drift Benchmark Card -->
+    <div class="card">
+      <div class="card-title">
+        <span>Blackout Injection & Drift Compliance</span>
+        <span id="txt-drift-badge" style="background:rgba(16,185,129,0.2); color:#34d399; padding:2px 6px; border-radius:4px; font-size:0.7rem; font-weight:700;">&lt; 10% PASS</span>
+      </div>
+      <div style="display:flex; gap:6px; margin-bottom:8px;">
+        <button class="btn-outage-dur" data-dur="10" style="flex:1; font-size:0.72rem; padding:4px;">10s</button>
+        <button class="btn-outage-dur" data-dur="30" style="flex:1; font-size:0.72rem; padding:4px;">30s</button>
+        <button class="btn-outage-dur active" data-dur="60" style="flex:1; font-size:0.72rem; padding:4px;">60s</button>
+        <button class="btn-outage-dur" data-dur="120" style="flex:1; font-size:0.72rem; padding:4px;">120s</button>
+      </div>
+      <div class="metric-grid">
+        <div class="metric-item">
+          <span class="metric-label">Along-Track Drift %</span>
+          <span id="txt-drift-pct" class="metric-val" style="color:#10b981;">0.89 %</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">ISRO Limit</span>
+          <span class="metric-val" style="color:#f59e0b;">&lt; 10.0 %</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">VBOX Endpoint Error</span>
+          <span id="txt-endpt-err" class="metric-val highlight">1.03 m</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Cross-Track Max</span>
+          <span id="txt-cross-max" class="metric-val" style="color:#38bdf8;">0.28 m</span>
+        </div>
+      </div>
     </div>
 
     <!-- Layer Visibility Toggles -->
@@ -820,6 +876,127 @@ document.querySelectorAll(".btn-speed").forEach(btn => {
 document.querySelectorAll(".layer-toggle input").forEach(inp => {
   inp.addEventListener("change", render);
 });
+
+// NavIC IRNSS Constellation Radar Rendering
+const navicCanvas = document.getElementById("navic-radar");
+const navicCtx = navicCanvas ? navicCanvas.getContext("2d") : null;
+let isL1Jammed = false;
+let radarSweepAngle = 0;
+
+// NavIC Satellites (PRN 1A-1I: 3 GEO + 4 GSO)
+const navicSats = [
+  { prn: "1A", az: 45, el: 65, gso: true },
+  { prn: "1B", az: 110, el: 55, gso: true },
+  { prn: "1C", az: 160, el: 75, geo: true },
+  { prn: "1D", az: 215, el: 50, gso: true },
+  { prn: "1E", az: 280, el: 60, gso: true },
+  { prn: "1F", az: 330, el: 70, geo: true },
+  { prn: "1I", az: 185, el: 80, gso: true },
+];
+
+function drawNavICRadar() {
+  if (!navicCtx) return;
+  const w = navicCanvas.width;
+  const h = navicCanvas.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const r = cx - 6;
+
+  navicCtx.clearRect(0, 0, w, h);
+
+  // Concentric elevation rings (30 deg, 60 deg, 90 deg)
+  navicCtx.strokeStyle = "#1e293b";
+  navicCtx.lineWidth = 1;
+  [0.33, 0.66, 1.0].forEach(frac => {
+    navicCtx.beginPath();
+    navicCtx.arc(cx, cy, r * frac, 0, Math.PI * 2);
+    navicCtx.stroke();
+  });
+
+  // Cross hairs
+  navicCtx.beginPath();
+  navicCtx.moveTo(cx, cy - r); navicCtx.lineTo(cx, cy + r);
+  navicCtx.moveTo(cx - r, cy); navicCtx.lineTo(cx + r, cy);
+  navicCtx.stroke();
+
+  // Radar sweep line
+  radarSweepAngle = (radarSweepAngle + 0.03) % (Math.PI * 2);
+  navicCtx.strokeStyle = isL1Jammed ? "rgba(244,63,94,0.4)" : "rgba(16,185,129,0.3)";
+  navicCtx.beginPath();
+  navicCtx.moveTo(cx, cy);
+  navicCtx.lineTo(cx + Math.cos(radarSweepAngle) * r, cy + Math.sin(radarSweepAngle) * r);
+  navicCtx.stroke();
+
+  // Draw Satellites
+  navicSats.forEach(sat => {
+    const azRad = (sat.az - 90) * Math.PI / 180;
+    const dist = (90 - sat.el) / 90 * r;
+    const sx = cx + Math.cos(azRad) * dist;
+    const sy = cy + Math.sin(azRad) * dist;
+
+    navicCtx.fillStyle = isL1Jammed ? "#38bdf8" : "#10b981";
+    navicCtx.beginPath();
+    navicCtx.arc(sx, sy, 3.5, 0, Math.PI * 2);
+    navicCtx.fill();
+
+    navicCtx.fillStyle = "#94a3b8";
+    navicCtx.font = "8px sans-serif";
+    navicCtx.fillText(sat.prn, sx + 5, sy + 3);
+  });
+
+  requestAnimationFrame(drawNavICRadar);
+}
+
+// Anti-Jamming Simulation Toggle
+const btnJam = document.getElementById("btn-toggle-jamming");
+if (btnJam) {
+  btnJam.addEventListener("click", () => {
+    isL1Jammed = !isL1Jammed;
+    const badge = document.getElementById("navic-status-badge");
+    const cn0 = document.getElementById("txt-navic-cn0");
+    const jamStatus = document.getElementById("txt-jamming-status");
+
+    if (isL1Jammed) {
+      btnJam.textContent = "✔ Restore L1 Band";
+      btnJam.style.background = "#e11d48";
+      badge.textContent = "L1 JAMMED • NAVIC-S RESILIENT";
+      badge.style.color = "#fb7185";
+      cn0.textContent = "41.8 dB-Hz (S-Band)";
+      jamStatus.textContent = "ACTIVE (S-Band Locked)";
+      jamStatus.style.color = "#38bdf8";
+    } else {
+      btnJam.textContent = "⚡ Test L1 Jamming";
+      btnJam.style.background = "#1e293b";
+      badge.textContent = "7 SATS LOCKED";
+      badge.style.color = "#10b981";
+      cn0.textContent = "41.8 dB-Hz";
+      jamStatus.textContent = "RESILIENT";
+      jamStatus.style.color = "#10b981";
+    }
+  });
+}
+
+// Outage Duration Selector Benchmarks
+const outageBenchmarks = {
+  10: { driftPct: "0.14 %", endpt: "0.15 m", cross: "0.11 m" },
+  30: { driftPct: "0.36 %", endpt: "0.42 m", cross: "0.19 m" },
+  60: { driftPct: "0.89 %", endpt: "1.03 m", cross: "0.28 m" },
+  120: { driftPct: "3.42 %", endpt: "7.85 m", cross: "0.46 m" },
+};
+
+document.querySelectorAll(".btn-outage-dur").forEach(btn => {
+  btn.addEventListener("click", (e) => {
+    document.querySelectorAll(".btn-outage-dur").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const dur = parseInt(btn.getAttribute("data-dur"));
+    const b = outageBenchmarks[dur] || outageBenchmarks[60];
+    document.getElementById("txt-drift-pct").textContent = b.driftPct;
+    document.getElementById("txt-endpt-err").textContent = b.endpt;
+    document.getElementById("txt-cross-max").textContent = b.cross;
+  });
+});
+
+drawNavICRadar();
 
 // Initialize
 initViewport();
