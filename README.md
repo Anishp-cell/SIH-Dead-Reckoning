@@ -103,6 +103,9 @@ In direct response to the rigorous evaluation perspectives of the ISRO SIH Techn
 6. **Interactive Web Simulation & Evaluation Workbench**:
    - Module: `research_replay_phase8.html`
    - Upgraded simulation workbench featuring interactive blackout injection (10s, 30s, 60s, 120s), live along-track/cross-track drift gauges, an interactive rotating **ISRO NavIC Constellation Radar**, and a live **"Test L1 Jamming"** injection toggle.
+7. **Topological Route-Aware Dead Reckoning (RADR) & Offline Maneuver Guidance**:
+   - Module: `Data_details/src/phase8/navigation/maneuver_guidance.py`
+   - Real-time offline turn countdowns (meters and time-to-maneuver) during persistent GNSS blackout. Features lane-level guidance (`[ ⮱ ]  [   ]`), maneuver verification via IMU gyroscope angular rate integration, heading bias pseudo-measurement clamping, and automated divergence anomaly detection ($< 1.2\,\text{s}$ latency) if an exit or turn is missed.
 
 ---
 

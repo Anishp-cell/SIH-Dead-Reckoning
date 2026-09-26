@@ -1,9 +1,9 @@
 configuration,max_error_m,mean_error_m,max_along_track_m,max_cross_track_m,recovery_p_step_m,recovery_v_step_mps,pseudo_accel_mps2,zero_teleportation_passed
-Phase 7 (Pure DR + Map Constraints),80.11,22.39,80.07,2.94,0.007,0.006,0.056,True
-Phase 7 + GNSS Position,77.1,24.45,77.06,2.42,0.007,0.006,0.056,True
-Phase 7 + GNSS Velocity,78.3,23.37,78.26,2.9,0.007,0.006,0.056,True
-Phase 7 + Both (Unconstrained Reset),145.29,84.98,145.29,1.45,134.493,0.009,0.09,False
-Final Robust Fusion (Full Phase 8),74.72,27.16,74.68,2.94,0.006,0.006,0.056,True
+Phase 7 (Pure DR + Map Constraints),91.32,17.1,91.28,2.89,0.0,0.006,0.056,True
+Phase 7 + GNSS Position,85.12,18.94,85.08,2.89,0.0,0.006,0.056,True
+Phase 7 + GNSS Velocity,86.39,18.7,86.35,2.97,0.0,0.006,0.056,True
+Phase 7 + Both (Unconstrained Reset),141.49,81.36,141.49,1.22,127.508,0.009,0.088,False
+Final Robust Fusion (Full Phase 8),82.4,20.1,82.36,2.63,0.0,0.006,0.056,True
 Ablation: No Map (Phase 8),74.47,29.11,74.25,13.76,0.006,0.006,0.056,True
-Ablation: No Quality Gating,145.29,106.43,145.29,7.8,0.001,0.006,0.056,True
-Ablation: Hard Reset Recovery,74.72,24.83,74.68,2.34,32.181,0.01,0.1,False
+Ablation: No Quality Gating,141.49,104.77,141.49,8.75,0.0,0.006,0.056,True
+Ablation: Hard Reset Recovery,82.4,18.71,82.36,2.6,16.974,0.01,0.102,False

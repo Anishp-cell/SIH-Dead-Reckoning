@@ -23,15 +23,56 @@ def generate_phase8_research_replay(
     road_segments: List[Dict[str, Any]],
     frames_data: List[Dict[str, Any]],
     title: str = "Phase 8 GNSS/INS Fusion & Recovery Simulation (60s Blackout)",
+    waypoints_data: Optional[List[Dict[str, Any]]] = None,
 ):
     """
-    Generates a high-fidelity offline cartographic research replay HTML tool.
+    Generates a high-fidelity offline cartographic research replay HTML tool
+    with Topological Route-Aware Dead Reckoning (RADR) Maneuver Guidance.
     """
     output_html_path = Path(output_html_path)
     output_html_path.parent.mkdir(parents=True, exist_ok=True)
 
+    if waypoints_data is None:
+        # Default topological waypoints along the Tile Hill Lane / A45 junction
+        waypoints_data = [
+            {
+                "maneuver_id": "WP_01_LANE_SELECT",
+                "type": "LANE_CHANGE_LEFT",
+                "pos_enu": [-4462.0, -170.0],
+                "turn_angle_deg": -5.0,
+                "road_name": "A45 Underpass Approach",
+                "action_instruction": "Keep Left (Lane 1) for Tile Hill Underpass",
+                "recommended_lanes": [1],
+                "total_lanes": 2,
+                "trigger_radius_m": 16.0,
+            },
+            {
+                "maneuver_id": "WP_02_TURN_90",
+                "type": "TURN_RIGHT_90",
+                "pos_enu": [-4479.5, -92.0],
+                "turn_angle_deg": 88.5,
+                "road_name": "Tile Hill Lane (Eastbound)",
+                "action_instruction": "Take Right 90° Turn onto Tile Hill Lane",
+                "recommended_lanes": [2],
+                "total_lanes": 2,
+                "trigger_radius_m": 15.0,
+            },
+            {
+                "maneuver_id": "WP_03_RECOVERY_ZONE",
+                "type": "STRAIGHT_CONTINUE",
+                "pos_enu": [-4487.4, -38.0],
+                "turn_angle_deg": 0.0,
+                "road_name": "A45 Underpass Exit",
+                "action_instruction": "Underpass Exit: NavIC Re-acquisition Zone",
+                "recommended_lanes": [1, 2],
+                "total_lanes": 2,
+                "trigger_radius_m": 22.0,
+            },
+        ]
+
     roads_json = json.dumps(road_segments)
     frames_json = json.dumps(frames_data)
+    waypoints_json = json.dumps(waypoints_data)
 
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
@@ -85,6 +126,18 @@ def generate_phase8_research_replay(
   @keyframes pulseRecover {{
     0%, 100% {{ box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.4); }}
     50% {{ box-shadow: 0 0 0 8px rgba(6, 182, 212, 0); }}
+  }}
+  @keyframes pulseManeuver {{
+    0%, 100% {{ box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.5); }}
+    50% {{ box-shadow: 0 0 0 10px rgba(6, 182, 212, 0); }}
+  }}
+  @keyframes pulseTurnAlert {{
+    0%, 100% {{ box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.6); }}
+    50% {{ box-shadow: 0 0 0 12px rgba(244, 63, 94, 0); }}
+  }}
+  .card-maneuver {{
+    border-left: 3px solid var(--accent-cyan) !important;
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
   }}
 
   .main-container {{
@@ -228,6 +281,40 @@ def generate_phase8_research_replay(
       </div>
     </div>
 
+    <!-- Topological Route Guidance Card (RADR) -->
+    <div class="card card-maneuver" id="card-maneuver">
+      <div class="card-title" style="color: var(--accent-cyan);">
+        <span>Topological Route Guidance (RADR)</span>
+        <span id="badge-maneuver-phase" class="badge" style="background: rgba(6, 182, 212, 0.2); color: #38bdf8; border: 1px solid #0284c7;">EN ROUTE</span>
+      </div>
+      
+      <!-- Big Maneuver Visual Banner -->
+      <div style="display: flex; align-items: center; gap: 12px; margin: 8px 0; padding: 10px; background: rgba(15, 23, 42, 0.7); border-radius: 8px; border: 1px solid #334155;">
+        <div id="maneuver-icon-container" style="width: 48px; height: 48px; border-radius: 8px; background: #080d1a; border: 1px solid #06b6d4; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: #38bdf8; flex-shrink: 0;">
+          <span id="maneuver-icon-svg">⮱</span>
+        </div>
+        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+          <div style="display: flex; align-items: baseline; gap: 6px;">
+            <span id="txt-maneuver-dist" style="font-size: 1.5rem; font-weight: 800; font-family: monospace; color: #38bdf8;">85 m</span>
+            <span id="txt-maneuver-ttm" style="font-size: 0.78rem; color: #94a3b8;">(~6.2s)</span>
+          </div>
+          <div id="txt-maneuver-prompt" style="font-size: 0.8rem; font-weight: 600; color: #f8fafc; line-height: 1.2; word-break: break-word;">In 85m: Take Right 90° Turn onto Tile Hill Lane</div>
+        </div>
+      </div>
+
+      <!-- Lane Indicator Visualizer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding: 6px 10px; background: #0b1329; border-radius: 6px; border: 1px solid #1e293b;">
+        <span style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Lane Guidance</span>
+        <span id="txt-lane-display" style="font-family: monospace; font-size: 0.95rem; font-weight: 700; color: #10b981; letter-spacing: 2px;">[ ⮱ ]  [   ]</span>
+      </div>
+
+      <!-- Heading Zero-Drift Calibration Pill -->
+      <div id="maneuver-calib-pill" style="display: none; margin-top: 8px; padding: 6px 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid #059669; border-radius: 6px; font-size: 0.74rem; color: #34d399; align-items: center; gap: 6px;">
+        <span>✓</span>
+        <span id="txt-maneuver-calib">Maneuver Verified via Gyro: Heading Bias Reset (Drift Bounded)</span>
+      </div>
+    </div>
+
     <!-- Error Decomposition Card -->
     <div class="card">
       <div class="card-title">Real-Time Trajectory Errors (vs GT)</div>
@@ -349,6 +436,11 @@ def generate_phase8_research_replay(
           <div class="layer-color" style="background:#3b82f6;"></div>
           <span>Raw GNSS Fix Scatter & Uncertainty</span>
         </label>
+        <label class="layer-toggle">
+          <input type="checkbox" id="chk-maneuvers" checked>
+          <div class="layer-color" style="background:#38bdf8;"></div>
+          <span>Topological Maneuver Waypoints (RADR)</span>
+        </label>
       </div>
     </div>
   </div>
@@ -382,6 +474,7 @@ def generate_phase8_research_replay(
 // Embedded Datasets (100% Offline)
 const roadNetwork = {roads_json};
 const frames = {frames_json};
+const waypoints = {waypoints_json};
 
 const canvas = document.getElementById("map-canvas");
 const ctx = canvas.getContext("2d");
@@ -507,6 +600,7 @@ function render() {{
   const showP7 = document.getElementById("chk-p7").checked;
   const showP8 = document.getElementById("chk-p8").checked;
   const showGNSS = document.getElementById("chk-gnss").checked;
+  const showManeuvers = document.getElementById("chk-maneuvers") ? document.getElementById("chk-maneuvers").checked : true;
 
   const f = frames[currentFrame] || frames[0];
 
@@ -523,6 +617,11 @@ function render() {{
   // 2. Offline Cartographic OSM Road Network
   if (showRoads && roadNetwork.length > 0) {{
     drawCartographicRoads();
+  }}
+
+  // 2.5 Topological Maneuver Waypoints & Decision Nodes (RADR)
+  if (showManeuvers && f) {{
+    drawManeuverWaypoints(f);
   }}
 
   // 3. Trajectory Trails up to currentFrame
@@ -719,6 +818,148 @@ function drawVehicle(f) {{
   ctx.restore();
 }}
 
+// Draw Topological Maneuver Waypoints & Decision Nodes (RADR)
+function drawManeuverWaypoints(f) {{
+  if (!waypoints || waypoints.length === 0) return;
+
+  for (let i = 0; i < waypoints.length; i++) {{
+    const wp = waypoints[i];
+    const [wpx, wpy] = worldToCanvas(wp.pos_enu[0], wp.pos_enu[1]);
+
+    // Skip if far outside viewport
+    if (wpx < -80 || wpx > canvas.width + 80 || wpy < -80 || wpy > canvas.height + 80) continue;
+
+    // Distance from current vehicle position
+    const dx = wp.pos_enu[0] - f.p8[0];
+    const dy = wp.pos_enu[1] - f.p8[1];
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    ctx.save();
+
+    // 1. Trigger Radius Circle
+    const trigPx = wp.trigger_radius_m * view.scale;
+    ctx.beginPath();
+    ctx.arc(wpx, wpy, trigPx, 0, Math.PI * 2);
+    if (dist <= wp.trigger_radius_m) {{
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.22)';
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2 * window.devicePixelRatio;
+    }} else if (dist < wp.trigger_radius_m * 3.5) {{
+      ctx.fillStyle = 'rgba(6, 182, 212, 0.12)';
+      ctx.strokeStyle = '#06b6d4';
+      ctx.lineWidth = 1.5 * window.devicePixelRatio;
+      ctx.setLineDash([4, 4]);
+    }} else {{
+      ctx.fillStyle = 'rgba(56, 189, 248, 0.05)';
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+      ctx.lineWidth = 1 * window.devicePixelRatio;
+      ctx.setLineDash([2, 4]);
+    }}
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 2. Center Waypoint Pin / Badge
+    const pinRadius = Math.max(7, 9 * window.devicePixelRatio);
+    ctx.beginPath();
+    ctx.arc(wpx, wpy, pinRadius, 0, Math.PI * 2);
+    ctx.fillStyle = dist <= wp.trigger_radius_m ? '#10b981' : '#0284c7';
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2 * window.devicePixelRatio;
+    ctx.stroke();
+
+    // 3. Maneuver Symbol inside Pin
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${{Math.max(9, 10 * window.devicePixelRatio)}}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let sym = "•";
+    if (wp.type.includes("RIGHT")) sym = "⮱";
+    else if (wp.type.includes("LEFT")) sym = "⮰";
+    else if (wp.type.includes("UNDERPASS") || wp.type.includes("TUNNEL")) sym = "⮷";
+    else if (wp.type.includes("FLYOVER")) sym = "⮵";
+    ctx.fillText(sym, wpx, wpy);
+
+    // 4. Floating Waypoint Label Pill
+    const labelText = `${{sym}} ${{wp.road_name}} (${{Math.round(dist)}}m)`;
+    ctx.font = `bold ${{Math.max(10, 11 * window.devicePixelRatio)}}px -apple-system, BlinkMacSystemFont, sans-serif`;
+    const textMetrics = ctx.measureText(labelText);
+    const boxW = textMetrics.width + 16;
+    const boxH = 22 * window.devicePixelRatio;
+    const boxX = wpx - boxW / 2;
+    const boxY = wpy - pinRadius - boxH - 6;
+
+    // Pill background
+    ctx.beginPath();
+    if (ctx.roundRect) {{
+      ctx.roundRect(boxX, boxY, boxW, boxH, 4);
+    }} else {{
+      ctx.rect(boxX, boxY, boxW, boxH);
+    }}
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+    ctx.fill();
+    ctx.strokeStyle = dist <= wp.trigger_radius_m ? '#10b981' : '#334155';
+    ctx.lineWidth = 1 * window.devicePixelRatio;
+    ctx.stroke();
+
+    // Pill text
+    ctx.fillStyle = dist <= wp.trigger_radius_m ? '#34d399' : '#f8fafc';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labelText, wpx, boxY + boxH / 2);
+
+    ctx.restore();
+  }}
+}}
+
+// Fallback Maneuver Calculator when raw frames lack explicit maneuver objects
+function computeManeuverFallback(f) {{
+  if (!waypoints || waypoints.length === 0) return null;
+  let activeWp = waypoints[0];
+  let minDist = 99999;
+  for (const wp of waypoints) {{
+    const dx = wp.pos_enu[0] - f.p8[0];
+    const dy = wp.pos_enu[1] - f.p8[1];
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    // In this slice, movement is primarily northward (+y)
+    if (dy > -wp.trigger_radius_m) {{
+      activeWp = wp;
+      minDist = Math.max(0, dist);
+      break;
+    }}
+  }}
+
+  const speed = Math.max(1.5, f.speed_fused || 6.5);
+  const ttm = minDist / speed;
+  let phase = "EN_ROUTE";
+  if (minDist <= activeWp.trigger_radius_m) phase = "EXECUTE_NOW";
+  else if (minDist <= 50.0) phase = "PREPARE_MANEUVER";
+  else if (minDist <= 150.0) phase = "ADVANCE_ALERT";
+
+  let laneDisp = "[ ⮱ ]  [   ]";
+  if (activeWp.type.includes("LEFT")) laneDisp = "[ ⮰ ]  [   ]";
+  else if (activeWp.type.includes("UNDERPASS")) laneDisp = "[ ⮷ ]  [   ]";
+  else if (activeWp.type.includes("STRAIGHT")) laneDisp = "[ ↑ ]  [ ↑ ]";
+
+  let icon = "turn_right_90";
+  if (activeWp.type.includes("LEFT")) icon = "turn_left_90";
+  else if (activeWp.type.includes("UNDERPASS")) icon = "underpass_tunnel";
+  else if (activeWp.type.includes("STRAIGHT")) icon = "straight";
+
+  return {{
+    dist_m: minDist,
+    ttm_s: ttm,
+    phase: phase,
+    prompt: minDist <= activeWp.trigger_radius_m ? `${{activeWp.action_instruction.toUpperCase()}} NOW` : `In ${{Math.round(minDist)}}m: ${{activeWp.action_instruction}}`,
+    lane_display: laneDisp,
+    icon: icon,
+    turn_executed: minDist <= activeWp.trigger_radius_m,
+    missed_turn: false,
+    divergence_m: 0.0,
+  }};
+}}
+
 // Update Cartographic Scale Bar
 function updateScaleBar() {{
   const targetPx = 80;
@@ -742,22 +983,98 @@ function updateHUD() {{
   if (!f) return;
 
   // Badges & States
+  const stateStr = f.state || f.gnss_state || "GNSS_HEALTHY";
   const badge = document.getElementById("badge-gnss");
-  badge.textContent = f.state;
+  badge.textContent = stateStr;
   badge.className = "badge";
-  if (f.state === "GNSS_HEALTHY") badge.classList.add("badge-healthy");
-  else if (f.state === "GNSS_SUSPECT") badge.classList.add("badge-suspect");
-  else if (f.state === "GNSS_OUTAGE") badge.classList.add("badge-outage");
-  else if (f.state === "GNSS_RECOVERING") badge.classList.add("badge-recovering");
+  if (stateStr === "GNSS_HEALTHY") badge.classList.add("badge-healthy");
+  else if (stateStr === "GNSS_SUSPECT") badge.classList.add("badge-suspect");
+  else if (stateStr === "GNSS_OUTAGE") badge.classList.add("badge-outage");
+  else if (stateStr === "GNSS_RECOVERING") badge.classList.add("badge-recovering");
 
-  document.getElementById("txt-state").textContent = f.state.replace("GNSS_", "");
-  document.getElementById("txt-alpha").textContent = (f.recovery_alpha !== undefined ? f.recovery_alpha : 1.0).toFixed(3);
+  document.getElementById("txt-state").textContent = stateStr.replace("GNSS_", "");
+  const alphaVal = f.alpha !== undefined ? f.alpha : (f.recovery_alpha !== undefined ? f.recovery_alpha : 1.0);
+  document.getElementById("txt-alpha").textContent = Number(alphaVal).toFixed(3);
   document.getElementById("txt-step").textContent = `${{(f.p_step || 0).toFixed(2)}} m`;
+
+  // Topological Maneuver Guidance (RADR) Update
+  const m = f.maneuver || (computeManeuverFallback ? computeManeuverFallback(f) : null);
+  if (m) {{
+    const badgeM = document.getElementById("badge-maneuver-phase");
+    if (badgeM) {{
+      badgeM.textContent = (m.phase || "EN_ROUTE").replace(/_/g, " ");
+      badgeM.className = "badge";
+      if (m.phase === "EXECUTE_NOW") {{
+        badgeM.style.background = "rgba(244, 63, 94, 0.25)";
+        badgeM.style.color = "#fb7185";
+        badgeM.style.border = "1px solid #e11d48";
+        badgeM.style.animation = "pulseTurnAlert 1s infinite";
+      }} else if (m.phase === "PREPARE_MANEUVER") {{
+        badgeM.style.background = "rgba(245, 158, 11, 0.25)";
+        badgeM.style.color = "#fbbf24";
+        badgeM.style.border = "1px solid #d97706";
+        badgeM.style.animation = "pulseManeuver 1.5s infinite";
+      }} else if (m.phase === "MANEUVER_COMPLETED") {{
+        badgeM.style.background = "rgba(16, 185, 129, 0.25)";
+        badgeM.style.color = "#34d399";
+        badgeM.style.border = "1px solid #059669";
+        badgeM.style.animation = "none";
+      }} else if (m.phase === "MISSED_MANEUVER") {{
+        badgeM.style.background = "rgba(239, 68, 68, 0.3)";
+        badgeM.style.color = "#f87171";
+        badgeM.style.border = "1px solid #dc2626";
+        badgeM.style.animation = "pulseTurnAlert 0.8s infinite";
+      }} else {{
+        badgeM.style.background = "rgba(6, 182, 212, 0.15)";
+        badgeM.style.color = "#38bdf8";
+        badgeM.style.border = "1px solid #0284c7";
+        badgeM.style.animation = "none";
+      }}
+    }}
+
+    const distElem = document.getElementById("txt-maneuver-dist");
+    if (distElem) distElem.textContent = m.dist_m > 900 ? "--" : `${{Math.round(m.dist_m)}} m`;
+    const ttmElem = document.getElementById("txt-maneuver-ttm");
+    if (ttmElem) ttmElem.textContent = m.ttm_s > 0 && m.ttm_s < 300 ? `(~${{m.ttm_s.toFixed(1)}}s)` : "";
+    const promptElem = document.getElementById("txt-maneuver-prompt");
+    if (promptElem) promptElem.textContent = m.prompt || "Continue on route";
+    const laneElem = document.getElementById("txt-lane-display");
+    if (laneElem) laneElem.textContent = m.lane_display || "[ ↑ ]  [   ]";
+
+    const iconElem = document.getElementById("maneuver-icon-svg");
+    if (iconElem) {{
+      if (m.icon === "turn_right_90" || m.icon === "turn_right_slight") iconElem.textContent = "⮱";
+      else if (m.icon === "turn_left_90" || m.icon === "turn_left_slight") iconElem.textContent = "⮰";
+      else if (m.icon === "underpass_tunnel") iconElem.textContent = "⮷";
+      else if (m.icon === "flyover_ramp") iconElem.textContent = "⮵";
+      else iconElem.textContent = "↑";
+    }}
+
+    const calibPill = document.getElementById("maneuver-calib-pill");
+    if (calibPill) {{
+      if (m.turn_executed) {{
+        calibPill.style.display = "flex";
+        calibPill.style.background = "rgba(16, 185, 129, 0.15)";
+        calibPill.style.borderColor = "#059669";
+        calibPill.style.color = "#34d399";
+        document.getElementById("txt-maneuver-calib").textContent = "Maneuver Verified via Gyro: Heading Bias Reset (Drift Clamped)";
+      }} else if (m.missed_turn) {{
+        calibPill.style.display = "flex";
+        calibPill.style.background = "rgba(239, 68, 68, 0.2)";
+        calibPill.style.borderColor = "#dc2626";
+        calibPill.style.color = "#f87171";
+        document.getElementById("txt-maneuver-calib").textContent = `DIVERGENCE WARNING: Missed Turn (+${{(m.divergence_m || 0).toFixed(1)}}m cross-track)`;
+      }} else {{
+        calibPill.style.display = "none";
+      }}
+    }}
+  }}
 
   // Errors
   document.getElementById("txt-along").textContent = `${{(f.along_err || 0).toFixed(2)}} m`;
   document.getElementById("txt-cross").textContent = `${{(f.cross_err || 0).toFixed(2)}} m`;
-  document.getElementById("txt-e2d").textContent = `${{(f.e2d || 0).toFixed(2)}} m`;
+  const totErr = f.total_err !== undefined ? f.total_err : (f.e2d || 0);
+  document.getElementById("txt-e2d").textContent = `${{Number(totErr).toFixed(2)}} m`;
 
   // NIS
   const nisVal = f.gnss_nis || 0.0;

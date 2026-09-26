@@ -1,7 +1,7 @@
 component,mean_us,median_us,p95_us,p99_us
-Complete Phase 8 Streaming Cycle,3929.2,4013.8,5123.9,5568.2
-Phase 4 Neural Speed Inference,1650.3,1685.8,2152.0,2338.6
-ESKF Kinematic Prediction,471.5,481.6,614.9,668.2
-AI Speed & NHC/ZUPT Updates,589.4,602.1,768.6,835.2
-Phase 7 Map Matching & Updates,746.6,762.6,973.5,1058.0
-GNSS Quality Gating & Soft Update,471.5,481.6,614.9,668.2
+Complete Phase 8 Streaming Cycle,3877.8,3667.3,5988.2,7131.6
+Phase 4 Neural Speed Inference,1628.7,1540.3,2515.1,2995.3
+ESKF Kinematic Prediction,465.3,440.1,718.6,855.8
+AI Speed & NHC/ZUPT Updates,581.7,550.1,898.2,1069.7
+Phase 7 Map Matching & Updates,736.8,696.8,1137.8,1355.0
+GNSS Quality Gating & Soft Update,465.3,440.1,718.6,855.8

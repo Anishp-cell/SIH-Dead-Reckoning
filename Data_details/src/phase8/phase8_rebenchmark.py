@@ -60,6 +60,11 @@ from Data_details.src.phase8.evaluation.recovery_metrics import (
     compute_road_aligned_errors,
 )
 from Data_details.src.phase8.visualization.research_replay import generate_phase8_research_replay
+from Data_details.src.phase8.navigation.maneuver_guidance import (
+    TopologicalManeuverEngine,
+    WaypointManeuver,
+    ManeuverType,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("Phase8Rebenchmark")
@@ -954,10 +959,65 @@ def run_phase8_rebenchmark():
         mode="MODE_B_OPERATIONAL", enable_map=True, enable_gnss_pos=False, enable_gnss_vel=False,
     )
 
+    # Setup Topological Route-Aware Dead Reckoning (RADR) Maneuver Engine
+    wp1 = WaypointManeuver(
+        maneuver_id="WP_01_LANE_SELECT",
+        type=ManeuverType.LANE_CHANGE_LEFT,
+        pos_enu=np.array([-4462.0, -170.0, 11.5]),
+        ingress_heading_rad=1.35,
+        egress_heading_rad=1.35,
+        turn_angle_deg=-5.0,
+        road_name="A45 Underpass Approach",
+        action_instruction="Keep Left (Lane 1) for Tile Hill Underpass",
+        recommended_lanes=[1],
+        total_lanes=2,
+        trigger_radius_m=16.0,
+    )
+    wp2 = WaypointManeuver(
+        maneuver_id="WP_02_TURN_90",
+        type=ManeuverType.TURN_RIGHT_90,
+        pos_enu=np.array([-4479.5, -92.0, 12.0]),
+        ingress_heading_rad=1.35,
+        egress_heading_rad=2.90,
+        turn_angle_deg=88.5,
+        road_name="Tile Hill Lane (Eastbound)",
+        action_instruction="Take Right 90° Turn onto Tile Hill Lane",
+        recommended_lanes=[2],
+        total_lanes=2,
+        trigger_radius_m=15.0,
+    )
+    wp3 = WaypointManeuver(
+        maneuver_id="WP_03_RECOVERY_ZONE",
+        type=ManeuverType.STRAIGHT_CONTINUE,
+        pos_enu=np.array([-4487.4, -38.0, 12.7]),
+        ingress_heading_rad=1.35,
+        egress_heading_rad=1.35,
+        turn_angle_deg=0.0,
+        road_name="A45 Underpass Exit",
+        action_instruction="Underpass Exit: NavIC Re-acquisition Zone",
+        recommended_lanes=[1, 2],
+        total_lanes=2,
+        trigger_radius_m=22.0,
+    )
+    waypoints_list = [wp1, wp2, wp3]
+    maneuver_engine = TopologicalManeuverEngine(waypoints_list)
+
     replay_frames = []
     for i in range(len(df_p_slice)):
+        t_now = float(df_p_slice["time_s"].iloc[i] - df_p_slice["time_s"].iloc[0])
+        gyro_z = float(df_p_slice["gyro_z"].iloc[i]) if "gyro_z" in df_p_slice.columns else 0.0
+
+        m_state = maneuver_engine.update(
+            time_s=t_now,
+            pos_enu=res_plt["est_pos"][i],
+            vel_enu=res_plt["est_vel"][i],
+            yaw_rad=float(res_plt["est_yaw"][i]),
+            gyro_z_radps=gyro_z,
+            dt=0.1,
+        )
+
         replay_frames.append({
-            "t": round(float(df_p_slice["time_s"].iloc[i] - df_p_slice["time_s"].iloc[0]), 2),
+            "t": round(t_now, 2),
             "ref": [round(float(ref_p_plt[i, 0]), 2), round(float(ref_p_plt[i, 1]), 2)],
             "ref_yaw": round(float(ref_yaw_plt[i]), 3),
             "p6": [round(float(res_p6_replay["est_pos"][i, 0]), 2), round(float(res_p6_replay["est_pos"][i, 1]), 2)],
@@ -970,10 +1030,16 @@ def run_phase8_rebenchmark():
             "cross_err": round(float(cross_plt[i]), 2),
             "total_err": round(float(err_plt[i]), 2),
             "nis": round(float(res_plt["gnss_nis"][i]), 2),
+            "speed_gt": round(float(np.linalg.norm(ref_v_plt[i, :2])), 1),
+            "speed_fused": round(float(np.linalg.norm(res_plt["est_vel"][i, :2])), 1),
+            "maneuver": m_state.to_dict(),
         })
 
     replay_path = out_replay_dir / "research_replay_phase8.html"
-    generate_phase8_research_replay(replay_path, road_segs, replay_frames)
+    generate_phase8_research_replay(
+        replay_path, road_segs, replay_frames,
+        waypoints_data=[w.to_dict() for w in waypoints_list],
+    )
     shutil.copy(replay_path, benchmarks_final_dir / "research_replay_phase8.html")
     shutil.copy(replay_path, workspace_root / "research_replay_phase8.html")
 

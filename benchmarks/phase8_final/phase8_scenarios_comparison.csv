@@ -1,9 +1,9 @@
 scenario,max_error_m,mean_error_m,rmse_m,max_along_track_m,max_cross_track_m,post_recovery_err_m
-Scenario A (Healthy GNSS Continuous),74.72,40.51,43.42,74.68,4.14,6.43
-Scenario B (Short 10s Outage),74.72,25.31,29.3,74.68,2.34,7.95
-Scenario C (Medium 30s Outage),74.72,22.69,27.46,74.68,2.34,1.83
-Scenario D (Standard 60s Outage),74.72,27.16,29.88,74.68,2.94,26.98
-Scenario E (Deep 120s Outage),3879.47,407.73,932.33,3744.44,1014.61,3879.47
-Scenario F (GNSS Position Outlier 25m),74.72,40.56,43.43,74.68,4.18,9.24
-Scenario G (Chattering Outages 5s),74.72,27.91,30.27,74.68,2.88,24.24
-Scenario H (Recovery after Large DR Error),74.67,27.22,29.94,74.63,2.97,26.74
+Scenario A (Healthy GNSS Continuous),82.4,21.86,25.72,82.36,2.99,16.02
+Scenario B (Short 10s Outage),82.4,22.97,29.47,82.36,2.6,9.64
+Scenario C (Medium 30s Outage),82.4,21.88,26.85,82.36,2.6,15.86
+Scenario D (Standard 60s Outage),82.4,20.1,24.42,82.36,2.63,19.94
+Scenario E (Deep 120s Outage),4219.29,440.91,1018.59,3989.8,1372.56,4219.29
+Scenario F (GNSS Position Outlier 25m),82.4,21.99,25.8,82.36,3.06,22.72
+Scenario G (Chattering Outages 5s),82.4,20.32,24.58,82.36,3.09,27.81
+Scenario H (Recovery after Large DR Error),82.32,20.14,24.44,82.28,2.64,19.81
