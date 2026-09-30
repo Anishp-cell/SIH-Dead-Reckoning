@@ -5,11 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Scaffold
@@ -20,18 +18,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.sarathi.theme.AccentCyan
-import com.example.sarathi.theme.AccentCyanSubtle
-import com.example.sarathi.theme.BgBase
-import com.example.sarathi.theme.BgSurface
-import com.example.sarathi.theme.BorderSubtle
-import com.example.sarathi.theme.TextMuted
-import com.example.sarathi.theme.TextPrimary
+import com.example.sarathi.theme.BorderLight
+import com.example.sarathi.theme.MapTerrainBg
+import com.example.sarathi.theme.NavRouteBlue
+import com.example.sarathi.theme.SurfaceCardLight
+import com.example.sarathi.theme.TextMutedDark
 import com.example.sarathi.ui.audit.AuditScreen
 import com.example.sarathi.ui.home.HomeScreen
 import com.example.sarathi.ui.nav.NavigationScreen
@@ -53,7 +51,7 @@ fun SarathiApp(
                 onSelectTab = { viewModel.selectTab(it) }
             )
         },
-        containerColor = BgBase
+        containerColor = MapTerrainBg
     ) { innerPadding ->
         Box(
             modifier = Modifier
@@ -71,8 +69,10 @@ fun SarathiApp(
                 AppTab.NAVIGATION -> {
                     NavigationScreen(
                         state = vehicleState,
-                        onRestart = { viewModel.restartSimulation() },
+                        onStartSimulation = { viewModel.startSimulation() },
+                        onStopSimulation = { viewModel.stopSimulation() },
                         onTogglePause = { viewModel.togglePauseResume() },
+                        onRestart = { viewModel.restartSimulation() },
                         onOpenAudit = { viewModel.selectTab(AppTab.AUDIT) }
                     )
                 }
@@ -95,9 +95,10 @@ private fun BottomTabBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(BgSurface)
-            .border(1.dp, BorderSubtle)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .shadow(8.dp)
+            .background(SurfaceCardLight)
+            .border(1.dp, BorderLight)
+            .padding(horizontal = 14.dp, vertical = 8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -131,9 +132,9 @@ private fun TabItem(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    val bgColor = if (isSelected) AccentCyanSubtle else BgSurface
-    val textColor = if (isSelected) AccentCyan else TextMuted
-    val borderColor = if (isSelected) AccentCyan.copy(alpha = 0.5f) else BorderSubtle
+    val bgColor = if (isSelected) Color(0xFFE8F0FE) else Color.Transparent
+    val textColor = if (isSelected) NavRouteBlue else TextMutedDark
+    val borderColor = if (isSelected) NavRouteBlue.copy(alpha = 0.4f) else Color.Transparent
 
     Box(
         modifier = Modifier
@@ -141,7 +142,7 @@ private fun TabItem(
             .background(bgColor)
             .border(1.dp, borderColor, RoundedCornerShape(8.dp))
             .clickable { onClick() }
-            .padding(horizontal = 18.dp, vertical = 8.dp),
+            .padding(horizontal = 18.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(

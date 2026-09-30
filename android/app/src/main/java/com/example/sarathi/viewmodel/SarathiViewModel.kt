@@ -45,29 +45,56 @@ class SarathiViewModel : ViewModel() {
 
     fun startNavigation() {
         _currentTab.value = AppTab.NAVIGATION
-        restartSimulation()
+        startSimulation()
     }
 
-    fun restartSimulation() {
+    fun startSimulation() {
         simulationJob?.cancel()
         _vehicleState.update {
             VehicleState(
                 vehicleType = it.vehicleType,
+                mode = NavigationMode.GNSS_LOCKED,
+                activeAlgorithm = ActiveAlgorithm.CLOSED_LOOP_GNSS,
+                isStarted = true,
                 isRunning = true,
+                isPaused = false,
                 isCompleted = false
             )
         }
         startSimulationTicker()
     }
 
+    fun stopSimulation() {
+        simulationJob?.cancel()
+        _vehicleState.update {
+            VehicleState(
+                vehicleType = it.vehicleType,
+                mode = NavigationMode.READY,
+                activeAlgorithm = ActiveAlgorithm.STANDBY,
+                isStarted = false,
+                isRunning = false,
+                isPaused = false,
+                isCompleted = false
+            )
+        }
+    }
+
+    fun restartSimulation() {
+        startSimulation()
+    }
+
     fun togglePauseResume() {
         val currentlyRunning = _vehicleState.value.isRunning
         if (currentlyRunning) {
             simulationJob?.cancel()
-            _vehicleState.update { it.copy(isRunning = false) }
+            _vehicleState.update { it.copy(isRunning = false, isPaused = true) }
         } else {
-            _vehicleState.update { it.copy(isRunning = true) }
-            startSimulationTicker()
+            if (!_vehicleState.value.isStarted) {
+                startSimulation()
+            } else {
+                _vehicleState.update { it.copy(isRunning = true, isPaused = false) }
+                startSimulationTicker()
+            }
         }
     }
 
@@ -83,21 +110,28 @@ class SarathiViewModel : ViewModel() {
                     val newTime = state.timeSeconds + tickDeltaSec
                     val (mode, inTunnel, algo, tunnelProgress) = computeStage(newTime)
                     val (carOffset, ghostOffset, curveDeg) = computeDynamics(newTime, inTunnel, state.vehicleType)
+                    
                     val haloRadius = if (inTunnel) {
-                        (16.0f + 10.0f * sin((newTime - 15.0f) * 0.35f)).coerceIn(16.0f, 26.0f)
+                        (14.0f + 8.0f * sin((newTime - 15.0f) * 0.35f)).coerceIn(14.0f, 22.0f)
                     } else {
-                        16.0f
+                        14.0f
                     }
                     val isPothole = inTunnel && (newTime in 31.0f..33.5f)
 
-                    val currentSpeedKmh = if (inTunnel) {
+                    // Speed smoothly ramps up to cruise speed on start, cruises around 48 km/h
+                    val targetCruiseSpeed = if (inTunnel) {
                         47.5f + 1.2f * sin(newTime * 0.8f)
                     } else {
                         48.5f + 0.8f * sin(newTime * 0.5f)
                     }
+                    val rampFactor = (newTime / 2.0f).coerceIn(0.0f, 1.0f)
+                    val currentSpeedKmh = targetCruiseSpeed * rampFactor
 
                     val currentSpeedMs = currentSpeedKmh / 3.6f
                     val newDistance = state.distanceTraveledMeters + (currentSpeedMs * tickDeltaSec)
+
+                    // Non-intrusive alert when entering blackout (from 15.0s to 18.5s)
+                    val showAlert = (newTime in 15.0f..18.5f)
 
                     state.copy(
                         timeSeconds = newTime,
@@ -106,6 +140,7 @@ class SarathiViewModel : ViewModel() {
                         tunnelProgress = tunnelProgress,
                         activeAlgorithm = if (isPothole) ActiveAlgorithm.POTHOLE_GATING else algo,
                         potholePulsing = isPothole,
+                        showGpsLostAlert = showAlert,
                         speedKmh = currentSpeedKmh,
                         speedMs = currentSpeedMs,
                         speedUncertaintyMs = if (inTunnel) 0.38f else 0.18f,
@@ -179,28 +214,24 @@ class SarathiViewModel : ViewModel() {
         val baseCurve = when {
             t in 22.0f..38.0f -> {
                 val curveNorm = sin((t - 22.0f) / 16.0f * Math.PI.toFloat())
-                curveNorm * 18.0f
+                curveNorm * 16.0f
             }
             else -> 0.0f
         }
 
-        // Cyan vehicle is locked to lane center with tiny realistic steering noise (<0.10f)
-        val carLateral = (0.05f * sin(t * 0.4f)).coerceIn(-0.15f, 0.15f)
+        val carLateral = (0.04f * sin(t * 0.4f)).coerceIn(-0.12f, 0.12f)
 
-        // Red Ghost (Raw uncorrected IMU drift) drifts monotonically off to the right barrier during blackout
         val ghostLateral = if (inTunnel) {
             val blackoutElapsed = t - 15.0f
-            // Exponential quadratic drift curve representing uncorrected double integration
             (0.02f * blackoutElapsed + 0.0028f * blackoutElapsed * blackoutElapsed).coerceAtMost(2.6f)
         } else if (t < 15.0f) {
             carLateral
         } else {
-            0.0f // Hidden post recovery
+            0.0f
         }
 
-        // 2-Wheeler Lean Compensation adjusts slight banking bias
         val effectiveCarLateral = if (vehicleType == VehicleType.BIKE_2W && inTunnel) {
-            carLateral * 0.85f // Extra stability from lean compensation
+            carLateral * 0.85f
         } else {
             carLateral
         }

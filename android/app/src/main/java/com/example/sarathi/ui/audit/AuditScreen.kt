@@ -21,21 +21,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sarathi.model.AuditResults
-import com.example.sarathi.theme.AccentCyan
-import com.example.sarathi.theme.BgBase
-import com.example.sarathi.theme.BgCard
-import com.example.sarathi.theme.BgSurface
-import com.example.sarathi.theme.BorderSubtle
-import com.example.sarathi.theme.StatusGnss
-import com.example.sarathi.theme.StatusGnssBg
-import com.example.sarathi.theme.TextMuted
-import com.example.sarathi.theme.TextPrimary
-import com.example.sarathi.theme.TextSecondary
+import com.example.sarathi.theme.BorderLight
+import com.example.sarathi.theme.MapTerrainBg
+import com.example.sarathi.theme.NavRouteBlue
+import com.example.sarathi.theme.StatusGnssBgLight
+import com.example.sarathi.theme.StatusGnssGreen
+import com.example.sarathi.theme.SurfaceCardLight
+import com.example.sarathi.theme.SurfaceCardSubtle
+import com.example.sarathi.theme.TextMutedDark
+import com.example.sarathi.theme.TextPrimaryDark
+import com.example.sarathi.theme.TextSecondaryDark
 import java.util.Locale
 
 @Composable
@@ -49,9 +51,9 @@ fun AuditScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(BgBase)
+            .background(MapTerrainBg)
             .verticalScroll(scrollState)
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .padding(horizontal = 18.dp, vertical = 20.dp)
     ) {
         // Header
         Row(
@@ -62,7 +64,7 @@ fun AuditScreen(
             Column {
                 Text(
                     text = "PERFORMANCE AUDIT",
-                    color = AccentCyan,
+                    color = NavRouteBlue,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
@@ -70,7 +72,7 @@ fun AuditScreen(
                 )
                 Text(
                     text = "ISRO SIH26168 Verification Report",
-                    color = TextSecondary,
+                    color = TextSecondaryDark,
                     fontSize = 11.sp
                 )
             }
@@ -78,13 +80,13 @@ fun AuditScreen(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(StatusGnssBg)
-                    .border(1.dp, StatusGnss, RoundedCornerShape(6.dp))
+                    .background(StatusGnssBgLight)
+                    .border(1.dp, StatusGnssGreen.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = "PASSED",
-                    color = StatusGnss,
+                    color = StatusGnssGreen,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Black,
                     fontFamily = FontFamily.Monospace
@@ -92,21 +94,22 @@ fun AuditScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // Session Meta Card
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .shadow(2.dp, RoundedCornerShape(10.dp))
                 .clip(RoundedCornerShape(10.dp))
-                .background(BgSurface)
-                .border(1.dp, BorderSubtle, RoundedCornerShape(10.dp))
+                .background(SurfaceCardLight)
+                .border(1.dp, BorderLight, RoundedCornerShape(10.dp))
                 .padding(12.dp)
         ) {
             Column {
                 Text(
                     text = "SCENARIO: 60-Second Full GNSS Blackout Tunnel",
-                    color = TextPrimary,
+                    color = TextPrimaryDark,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.SemiBold,
                     fontFamily = FontFamily.Monospace
@@ -114,14 +117,14 @@ fun AuditScreen(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "BASELINE: Racelogic VBOX RTK 100 Hz Ground Truth (Coventry S1)",
-                    color = TextMuted,
+                    color = TextMutedDark,
                     fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // 1. Metric Card: Dead Reckoning Drift Rate
         AuditMetricCard(
@@ -133,7 +136,7 @@ fun AuditScreen(
             passed = auditResults.driftPassed
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // 2. Metric Card: Lateral Cross-Track Error
         AuditMetricCard(
@@ -144,7 +147,7 @@ fun AuditScreen(
             passed = auditResults.crossTrackPassed
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // 3. Metric Card: Exit Recovery Discontinuity
         AuditMetricCard(
@@ -155,12 +158,12 @@ fun AuditScreen(
             passed = auditResults.recoveryStepPassed
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // 4. Embedded Engine Specifications Card
         Text(
             text = "EMBEDDED SYSTEM CAPABILITIES",
-            color = TextPrimary,
+            color = TextPrimaryDark,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
@@ -171,9 +174,10 @@ fun AuditScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .shadow(2.dp, RoundedCornerShape(10.dp))
                 .clip(RoundedCornerShape(10.dp))
-                .background(BgCard)
-                .border(1.dp, BorderSubtle, RoundedCornerShape(10.dp))
+                .background(SurfaceCardLight)
+                .border(1.dp, BorderLight, RoundedCornerShape(10.dp))
                 .padding(12.dp)
         ) {
             Column {
@@ -187,16 +191,17 @@ fun AuditScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // Action Button: RUN SIMULATION AGAIN
         Button(
             onClick = onRunAgain,
-            colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = BgBase),
+            colors = ButtonDefaults.buttonColors(containerColor = NavRouteBlue, contentColor = Color.White),
             shape = RoundedCornerShape(10.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
+                .height(48.dp)
+                .shadow(3.dp, RoundedCornerShape(10.dp))
         ) {
             Text(
                 text = "RUN SIMULATION AGAIN",
@@ -220,9 +225,10 @@ private fun AuditMetricCard(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(2.dp, RoundedCornerShape(10.dp))
             .clip(RoundedCornerShape(10.dp))
-            .background(BgSurface)
-            .border(1.dp, BorderSubtle, RoundedCornerShape(10.dp))
+            .background(SurfaceCardLight)
+            .border(1.dp, BorderLight, RoundedCornerShape(10.dp))
             .padding(14.dp)
     ) {
         Column {
@@ -233,7 +239,7 @@ private fun AuditMetricCard(
             ) {
                 Text(
                     text = title,
-                    color = TextPrimary,
+                    color = TextPrimaryDark,
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace
@@ -241,12 +247,12 @@ private fun AuditMetricCard(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(4.dp))
-                        .background(StatusGnssBg)
+                        .background(StatusGnssBgLight)
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = if (passed) "PASSED" else "FAILED",
-                        color = if (passed) StatusGnss else AccentCyan,
+                        color = if (passed) StatusGnssGreen else NavRouteBlue,
                         fontSize = 9.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace
@@ -259,7 +265,7 @@ private fun AuditMetricCard(
             Row(verticalAlignment = Alignment.Bottom) {
                 Text(
                     text = achieved,
-                    color = AccentCyan,
+                    color = NavRouteBlue,
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace
@@ -267,7 +273,7 @@ private fun AuditMetricCard(
                 Spacer(modifier = Modifier.padding(horizontal = 4.dp))
                 Text(
                     text = "(Target: $target)",
-                    color = TextSecondary,
+                    color = TextSecondaryDark,
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace,
                     modifier = Modifier.padding(bottom = 3.dp)
@@ -278,7 +284,7 @@ private fun AuditMetricCard(
 
             Text(
                 text = detail,
-                color = TextMuted,
+                color = TextMutedDark,
                 fontSize = 10.sp,
                 fontFamily = FontFamily.Monospace
             )
@@ -292,7 +298,7 @@ private fun SpecRow(label: String, value: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = label, color = TextMuted, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
-        Text(text = value, color = TextPrimary, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+        Text(text = label, color = TextMutedDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+        Text(text = value, color = TextPrimaryDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
     }
 }
