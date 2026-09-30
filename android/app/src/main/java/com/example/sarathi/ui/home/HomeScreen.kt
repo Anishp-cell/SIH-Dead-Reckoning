@@ -25,21 +25,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sarathi.model.VehicleType
-import com.example.sarathi.theme.AccentCyan
-import com.example.sarathi.theme.BgBase
-import com.example.sarathi.theme.BgCard
-import com.example.sarathi.theme.BgSurface
-import com.example.sarathi.theme.BorderHighlight
-import com.example.sarathi.theme.BorderSubtle
-import com.example.sarathi.theme.StatusGnss
-import com.example.sarathi.theme.TextMuted
-import com.example.sarathi.theme.TextPrimary
-import com.example.sarathi.theme.TextSecondary
+import com.example.sarathi.theme.BorderLight
+import com.example.sarathi.theme.MapTerrainBg
+import com.example.sarathi.theme.NavRouteBlue
+import com.example.sarathi.theme.StatusGnssBgLight
+import com.example.sarathi.theme.StatusGnssGreen
+import com.example.sarathi.theme.SurfaceCardLight
+import com.example.sarathi.theme.SurfaceCardSubtle
+import com.example.sarathi.theme.TextMutedDark
+import com.example.sarathi.theme.TextPrimaryDark
+import com.example.sarathi.theme.TextSecondaryDark
 
 @Composable
 fun HomeScreen(
@@ -53,9 +55,9 @@ fun HomeScreen(
     Column(
         modifier = modifier
             .fillMaxSize()
-            .background(BgBase)
+            .background(MapTerrainBg)
             .verticalScroll(scrollState)
-            .padding(horizontal = 20.dp, vertical = 24.dp)
+            .padding(horizontal = 18.dp, vertical = 20.dp)
     ) {
         // App Header
         Row(
@@ -66,15 +68,15 @@ fun HomeScreen(
             Column {
                 Text(
                     text = "SARATHI",
-                    color = AccentCyan,
-                    fontSize = 28.sp,
+                    color = NavRouteBlue,
+                    fontSize = 26.sp,
                     fontWeight = FontWeight.Black,
-                    letterSpacing = 2.sp,
+                    letterSpacing = 1.5.sp,
                     fontFamily = FontFamily.Monospace
                 )
                 Text(
                     text = "AI-ML Intelligent Dead Reckoning",
-                    color = TextSecondary,
+                    color = TextSecondaryDark,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -83,13 +85,13 @@ fun HomeScreen(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(6.dp))
-                    .background(BgCard)
-                    .border(1.dp, BorderSubtle, RoundedCornerShape(6.dp))
+                    .background(StatusGnssBgLight)
+                    .border(1.dp, StatusGnssGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
                     .padding(horizontal = 8.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = "ISRO NavIC L5/S",
-                    color = StatusGnss,
+                    color = StatusGnssGreen,
                     fontSize = 10.sp,
                     fontFamily = FontFamily.Monospace,
                     fontWeight = FontWeight.Bold
@@ -97,20 +99,20 @@ fun HomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = "Space Applications Centre (SAC), ISRO Ahmedabad • SIH26168",
-            color = TextMuted,
+            color = TextMutedDark,
             fontSize = 10.sp,
             fontFamily = FontFamily.Monospace
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // 1. Vehicle Profile Selection Card
         Text(
             text = "VEHICLE DYNAMICS PROFILE",
-            color = TextPrimary,
+            color = TextPrimaryDark,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
@@ -132,12 +134,12 @@ fun HomeScreen(
             onSelect = { onSelectVehicleType(VehicleType.BIKE_2W) }
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         // 2. Sensor Mount & Dynamic Alignment Card
         Text(
             text = "SENSOR MOUNT & CALIBRATION",
-            color = TextPrimary,
+            color = TextPrimaryDark,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
@@ -148,9 +150,10 @@ fun HomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .shadow(2.dp, RoundedCornerShape(12.dp))
                 .clip(RoundedCornerShape(12.dp))
-                .background(BgSurface)
-                .border(1.dp, BorderSubtle, RoundedCornerShape(12.dp))
+                .background(SurfaceCardLight)
+                .border(1.dp, BorderLight, RoundedCornerShape(12.dp))
                 .padding(14.dp)
         ) {
             Column {
@@ -159,12 +162,12 @@ fun HomeScreen(
                         modifier = Modifier
                             .size(8.dp)
                             .clip(CircleShape)
-                            .background(StatusGnss)
+                            .background(StatusGnssGreen)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Dynamic SO(3) Calibration: READY",
-                        color = StatusGnss,
+                        color = StatusGnssGreen,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace
@@ -173,19 +176,19 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "Automatic phone-to-vehicle pitch, roll, and yaw determination. Real-time mount slip detection & pothole shock dampening active.",
-                    color = TextSecondary,
+                    color = TextSecondaryDark,
                     fontSize = 11.sp,
                     lineHeight = 16.sp
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(18.dp))
 
         // 3. Evaluation Scenario Card
         Text(
             text = "AUTOMATED EVALUATION SCENARIO",
-            color = TextPrimary,
+            color = TextPrimaryDark,
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
@@ -196,9 +199,10 @@ fun HomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .shadow(2.dp, RoundedCornerShape(12.dp))
                 .clip(RoundedCornerShape(12.dp))
-                .background(BgSurface)
-                .border(1.dp, BorderSubtle, RoundedCornerShape(12.dp))
+                .background(SurfaceCardLight)
+                .border(1.dp, BorderLight, RoundedCornerShape(12.dp))
                 .padding(14.dp)
         ) {
             Column {
@@ -206,44 +210,45 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = "ROUTE:", color = TextMuted, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
-                    Text(text = "Dunchurch Hwy Underpass", color = TextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "ROUTE:", color = TextMutedDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                    Text(text = "Dunchurch Hwy Underpass", color = TextPrimaryDark, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = "BLACKOUT DURATION:", color = TextMuted, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
-                    Text(text = "60-Second Full Outage", color = AccentCyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "BLACKOUT DURATION:", color = TextMutedDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                    Text(text = "60-Second Full Outage", color = NavRouteBlue, fontSize = 11.sp, fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(text = "GROUND TRUTH:", color = TextMuted, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
-                    Text(text = "Racelogic VBOX RTK 100 Hz", color = TextSecondary, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                    Text(text = "GROUND TRUTH:", color = TextMutedDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+                    Text(text = "Racelogic VBOX RTK 100 Hz", color = TextSecondaryDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // 4. Large Action Button: START NAVIGATION
         Button(
             onClick = onStartNavigation,
-            colors = ButtonDefaults.buttonColors(containerColor = AccentCyan, contentColor = BgBase),
+            colors = ButtonDefaults.buttonColors(containerColor = NavRouteBlue, contentColor = Color.White),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(54.dp)
+                .height(52.dp)
+                .shadow(4.dp, RoundedCornerShape(12.dp))
         ) {
             Text(
                 text = "START NAVIGATION",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Black,
-                letterSpacing = 1.5.sp,
+                letterSpacing = 1.2.sp,
                 fontFamily = FontFamily.Monospace
             )
         }
@@ -256,12 +261,13 @@ private fun VehicleTypeOption(
     isSelected: Boolean,
     onSelect: () -> Unit
 ) {
-    val borderColor = if (isSelected) AccentCyan else BorderSubtle
-    val bgColor = if (isSelected) BgCard else BgSurface
+    val borderColor = if (isSelected) NavRouteBlue else BorderLight
+    val bgColor = if (isSelected) Color(0xFFF0F7FF) else SurfaceCardLight
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .shadow(if (isSelected) 3.dp else 1.dp, RoundedCornerShape(12.dp))
             .clip(RoundedCornerShape(12.dp))
             .background(bgColor)
             .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
@@ -276,14 +282,14 @@ private fun VehicleTypeOption(
             Column(modifier = Modifier.weight(1.0f)) {
                 Text(
                     text = type.title,
-                    color = if (isSelected) AccentCyan else TextPrimary,
+                    color = if (isSelected) NavRouteBlue else TextPrimaryDark,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = type.subtitle,
-                    color = TextSecondary,
+                    color = TextSecondaryDark,
                     fontSize = 10.sp
                 )
             }
@@ -291,13 +297,13 @@ private fun VehicleTypeOption(
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(4.dp))
-                    .background(if (isSelected) AccentCyan else BgBase)
-                    .border(1.dp, if (isSelected) AccentCyan else BorderHighlight, RoundedCornerShape(4.dp))
-                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                    .background(if (isSelected) NavRouteBlue else SurfaceCardSubtle)
+                    .border(1.dp, if (isSelected) NavRouteBlue else BorderLight, RoundedCornerShape(4.dp))
+                    .padding(horizontal = 8.dp, vertical = 3.dp)
             ) {
                 Text(
                     text = if (isSelected) "ACTIVE" else "SELECT",
-                    color = if (isSelected) BgBase else TextMuted,
+                    color = if (isSelected) Color.White else TextMutedDark,
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace

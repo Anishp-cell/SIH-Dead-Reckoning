@@ -1,25 +1,25 @@
 package com.example.sarathi.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-private val SarathiColorScheme = darkColorScheme(
-    primary = AccentCyan,
-    onPrimary = BgBase,
-    primaryContainer = AccentCyanSubtle,
-    onPrimaryContainer = AccentCyan,
-    secondary = StatusGnss,
-    onSecondary = BgBase,
-    tertiary = StatusOutage,
-    onTertiary = BgBase,
-    background = BgBase,
-    onBackground = TextPrimary,
-    surface = BgSurface,
-    onSurface = TextPrimary,
-    surfaceVariant = BgCard,
-    onSurfaceVariant = TextSecondary,
-    outline = BorderSubtle
+private val SarathiLightColorScheme = lightColorScheme(
+    primary = NavRouteBlue,
+    onPrimary = SurfaceCardLight,
+    primaryContainer = StatusGnssBgLight,
+    onPrimaryContainer = StatusGnssGreen,
+    secondary = StatusGnssGreen,
+    onSecondary = SurfaceCardLight,
+    tertiary = StatusOutageAmber,
+    onTertiary = SurfaceCardLight,
+    background = MapTerrainBg,
+    onBackground = TextPrimaryDark,
+    surface = SurfaceCardLight,
+    onSurface = TextPrimaryDark,
+    surfaceVariant = SurfaceCardSubtle,
+    onSurfaceVariant = TextSecondaryDark,
+    outline = BorderLight
 )
 
 @Composable
@@ -27,7 +27,7 @@ fun SarathiTheme(
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        colorScheme = SarathiColorScheme,
+        colorScheme = SarathiLightColorScheme,
         typography = Typography,
         content = content
     )

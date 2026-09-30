@@ -6,14 +6,14 @@ enum class VehicleType(
     val badge: String
 ) {
     CAR_4W(
-        title = "4-Wheeler (Car / Truck)",
+        title = "4-Wheeler (Car / Sedan)",
         subtitle = "Standard Non-Holonomic Constraints (v_lat = 0, v_up = 0)",
-        badge = "4-WHEELER NHC"
+        badge = "4W CAR"
     ),
     BIKE_2W(
-        title = "2-Wheeler (Motorcycle / Scooter)",
+        title = "2-Wheeler (Scooter / Motorcycle)",
         subtitle = "Banked Lean-Angle Compensation (v_contact-lat)",
-        badge = "2-WHEELER LEAN"
+        badge = "2W SCOOTER"
     )
 }
 
@@ -21,6 +21,10 @@ enum class NavigationMode(
     val label: String,
     val badgeText: String
 ) {
+    READY(
+        label = "GPS READY (NavIC Dual-Band L5/S)",
+        badgeText = "STANDBY"
+    ),
     GNSS_LOCKED(
         label = "GNSS LOCKED (NavIC + GPS)",
         badgeText = "HEALTHY"
@@ -34,7 +38,7 @@ enum class NavigationMode(
         badgeText = "SOFT RECOVERY"
     ),
     COMPLETED(
-        label = "RUN COMPLETED (Audit Ready)",
+        label = "DESTINATION REACHED",
         badgeText = "COMPLETED"
     )
 }
@@ -43,6 +47,10 @@ enum class ActiveAlgorithm(
     val chipLabel: String,
     val detailText: String
 ) {
+    STANDBY(
+        chipLabel = "NavIC Standby",
+        detailText = "System calibrated and ready to navigate"
+    ),
     CLOSED_LOOP_GNSS(
         chipLabel = "NavIC Dual-Band L5/S",
         detailText = "15-State ESKF with 3D Pseudorange Innovation Gating"
@@ -76,23 +84,27 @@ enum class ActiveAlgorithm(
 data class VehicleState(
     val timeSeconds: Float = 0.0f,
     val totalScenarioSeconds: Float = 55.0f,
-    val mode: NavigationMode = NavigationMode.GNSS_LOCKED,
+    val mode: NavigationMode = NavigationMode.READY,
     val vehicleType: VehicleType = VehicleType.CAR_4W,
-    val speedKmh: Float = 48.2f,
-    val speedMs: Float = 13.38f,
-    val speedUncertaintyMs: Float = 0.22f,
+    val speedKmh: Float = 0.0f,
+    val speedMs: Float = 0.0f,
+    val speedUncertaintyMs: Float = 0.15f,
     val distanceTraveledMeters: Float = 0.0f,
-    val crossTrackMeters: Float = 0.42f,
+    val crossTrackMeters: Float = 0.22f,
     val recoveryStepMeters: Float = 0.006f,
-    val activeAlgorithm: ActiveAlgorithm = ActiveAlgorithm.CLOSED_LOOP_GNSS,
+    val activeAlgorithm: ActiveAlgorithm = ActiveAlgorithm.STANDBY,
     val inTunnel: Boolean = false,
     val tunnelProgress: Float = 0.0f,
     val roadCurveDegrees: Float = 0.0f,
     val carLateralOffsetRatio: Float = 0.0f,
     val ghostLateralOffsetRatio: Float = 0.0f,
-    val covarianceHaloRadiusDp: Float = 16.0f,
+    val covarianceHaloRadiusDp: Float = 14.0f,
     val potholePulsing: Boolean = false,
+    val showGpsLostAlert: Boolean = false,
+    val gpsLostAlertMessage: String = "GPS Signal Lost • Dead Reckoning Autonomous Mode Active",
+    val isStarted: Boolean = false,
     val isRunning: Boolean = false,
+    val isPaused: Boolean = false,
     val isCompleted: Boolean = false
 )
 

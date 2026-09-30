@@ -18,7 +18,7 @@ class SarathiViewModelTest {
         assertEquals(AppTab.HOME, viewModel.currentTab.value)
         assertEquals(VehicleType.CAR_4W, viewModel.vehicleState.value.vehicleType)
         assertFalse(viewModel.vehicleState.value.isRunning)
-        assertEquals(NavigationMode.GNSS_LOCKED, viewModel.vehicleState.value.mode)
+        assertEquals(NavigationMode.READY, viewModel.vehicleState.value.mode)
     }
 
     @Test
@@ -34,6 +34,8 @@ class SarathiViewModelTest {
         viewModel.startNavigation()
         assertEquals(AppTab.NAVIGATION, viewModel.currentTab.value)
         assertTrue(viewModel.vehicleState.value.isRunning)
+        assertTrue(viewModel.vehicleState.value.isStarted)
+        assertEquals(NavigationMode.GNSS_LOCKED, viewModel.vehicleState.value.mode)
     }
 
     @Test
