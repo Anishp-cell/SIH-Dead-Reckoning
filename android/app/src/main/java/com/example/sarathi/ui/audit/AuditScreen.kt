@@ -1,6 +1,7 @@
 package com.example.sarathi.ui.audit
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,9 +11,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -26,79 +30,96 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sarathi.model.AuditResults
-import com.example.sarathi.theme.ChipBg
-import com.example.sarathi.theme.ChipBorder
-import com.example.sarathi.theme.MapBg
+import com.example.sarathi.theme.HomeBg
+import com.example.sarathi.theme.HomeBorder
+import com.example.sarathi.theme.HomeCardBg
+import com.example.sarathi.theme.HomeSubtext
+import com.example.sarathi.theme.HomeText
 import com.example.sarathi.theme.PuckBlue
 import com.example.sarathi.theme.StatusGreen
 import com.example.sarathi.theme.StatusRed
-import com.example.sarathi.theme.TextChip
-import com.example.sarathi.theme.TextPrimary
-import com.example.sarathi.theme.TextSecondary
 
 @Composable
 fun AuditScreen(
     auditResults: AuditResults,
-    onRunAgain: () -> Unit
+    onRunAgain: () -> Unit,
+    onBack: () -> Unit = {},
+    onLogoClick: () -> Unit = {}
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MapBg)
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(20.dp)
+        modifier = Modifier.fillMaxSize().background(HomeBg)
+            .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
+        // Top Bar: Back Button + Clickable Logo
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE2E8F0))
+                    .clickable { onBack() },
+                contentAlignment = Alignment.Center
+            ) {
+                Text("←", color = HomeText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.width(12.dp))
+            Row(
+                modifier = Modifier.clickable { onLogoClick() },
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("▲", color = PuckBlue, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(8.dp))
+                Column {
+                    Text("SAARTHI", color = HomeText, fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
+                    Text("MISSION AUDIT REPORT", color = HomeSubtext, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
+                }
+            }
+        }
 
-        // Header
-        Column {
+        val allPassed = auditResults.driftPassed && auditResults.crossTrackPassed && auditResults.recoveryStepPassed
+        Box(
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                .background((if (allPassed) StatusGreen else StatusRed).copy(alpha = 0.12f))
+                .border(1.dp, (if (allPassed) StatusGreen else StatusRed).copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
             Text(
-                text = "A  SAARTHI  AUDIT",
-                color = TextPrimary,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 2.sp
-            )
-            Text(
-                text = "ISRO SIH26168 Benchmark Results",
-                color = TextSecondary,
-                fontSize = 12.sp
+                if (allPassed) "✓  ALL BENCHMARKS PASSED" else "✗  SOME BENCHMARKS FAILED",
+                color = if (allPassed) StatusGreen else StatusRed,
+                fontSize = 14.sp, fontWeight = FontWeight.Bold
             )
         }
 
-        // Overall pass banner
-        val allPassed = auditResults.driftPassed && auditResults.crossTrackPassed && auditResults.recoveryStepPassed
-        PassBanner(allPassed)
-
-        // Benchmark metrics
         SectionLabel("ACCURACY BENCHMARKS")
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            MetricCard(
-                label = "Cumulative Position Drift",
-                achieved = "%.2f%%".format(auditResults.driftPercentAchieved),
-                target = "< %.1f%%".format(auditResults.driftPercentTarget),
-                passed = auditResults.driftPassed
-            )
-            MetricCard(
-                label = "Cross-Track Lane Error",
-                achieved = "%.2f m".format(auditResults.crossTrackAchievedMeters),
-                target = "< %.2f m".format(auditResults.crossTrackTargetMeters),
-                passed = auditResults.crossTrackPassed
-            )
-            MetricCard(
-                label = "Recovery Step Offset",
-                achieved = "%.3f m".format(auditResults.recoveryStepAchievedMeters),
-                target = "< %.2f m".format(auditResults.recoveryStepTargetMeters),
-                passed = auditResults.recoveryStepPassed
-            )
+            MetricCard("Cumulative Position Drift", "%.2f%%".format(auditResults.driftPercentAchieved),
+                "< %.1f%%".format(auditResults.driftPercentTarget), auditResults.driftPassed)
+            MetricCard("Cross-Track Lane Error", "%.2f m".format(auditResults.crossTrackAchievedMeters),
+                "< %.2f m".format(auditResults.crossTrackTargetMeters), auditResults.crossTrackPassed)
+            MetricCard("Recovery Step Offset", "%.3f m".format(auditResults.recoveryStepAchievedMeters),
+                "< %.2f m".format(auditResults.recoveryStepTargetMeters), auditResults.recoveryStepPassed)
         }
 
-        // System telemetry
         SectionLabel("SYSTEM TELEMETRY")
-        TelemetryGrid(auditResults)
+        Column(
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                .background(HomeCardBg).border(1.dp, HomeBorder, RoundedCornerShape(14.dp)).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            TelRow("Distance Traveled", "%.2f m".format(auditResults.distanceTraveledMeters))
+            TelRow("Filter Frequency", "%.1f Hz".format(auditResults.filterFrequencyHz))
+            TelRow("AI Inference Latency", "%.1f µs".format(auditResults.aiInferenceLatencyUs))
+            TelRow("AI Model Size", "${auditResults.aiModelSizeBytes / 1024} KB")
+            TelRow("NavIC Satellites Locked", "${auditResults.navicSatellitesLocked}")
+            TelRow("Potholes Dampened", "${auditResults.potholesDampedCount}")
+        }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
 
         Button(
             onClick = onRunAgain,
@@ -106,100 +127,49 @@ fun AuditScreen(
             shape = RoundedCornerShape(16.dp),
             colors = ButtonDefaults.buttonColors(containerColor = PuckBlue)
         ) {
-            Text("RUN AGAIN", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp, letterSpacing = 1.5.sp)
+            Text("RUN AGAIN", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp, letterSpacing = 1.sp)
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(Modifier.height(8.dp))
     }
 }
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(
-        text = text,
-        color = TextSecondary,
-        fontSize = 10.sp,
-        fontWeight = FontWeight.Bold,
-        letterSpacing = 1.5.sp
-    )
-}
-
-@Composable
-private fun PassBanner(passed: Boolean) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(if (passed) StatusGreen.copy(alpha = 0.15f) else StatusRed.copy(alpha = 0.15f))
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = if (passed) "ALL BENCHMARKS PASSED" else "SOME BENCHMARKS FAILED",
-            color = if (passed) StatusGreen else StatusRed,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = 1.sp
-        )
-    }
+    Text(text, color = HomeSubtext, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
 }
 
 @Composable
 private fun MetricCard(label: String, achieved: String, target: String, passed: Boolean) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(ChipBg)
-            .padding(16.dp),
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+            .background(HomeCardBg).border(1.dp, HomeBorder, RoundedCornerShape(12.dp)).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = label, color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.3.sp)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = achieved, color = TextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Text(text = "Target: $target", color = TextSecondary, fontSize = 10.sp)
+        Column(Modifier.weight(1f)) {
+            Text(label, color = HomeSubtext, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(4.dp))
+            Text(achieved, color = HomeText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Target: $target", color = HomeSubtext, fontSize = 10.sp)
         }
         Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(if (passed) StatusGreen.copy(alpha = 0.15f) else StatusRed.copy(alpha = 0.15f))
+            modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                .background((if (passed) StatusGreen else StatusRed).copy(alpha = 0.12f))
                 .padding(horizontal = 12.dp, vertical = 6.dp)
         ) {
             Text(
-                text = if (passed) "PASSED" else "FAILED",
+                if (passed) "PASSED" else "FAILED",
                 color = if (passed) StatusGreen else StatusRed,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 0.5.sp
+                fontSize = 10.sp, fontWeight = FontWeight.Bold
             )
         }
     }
 }
 
 @Composable
-private fun TelemetryGrid(r: AuditResults) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(ChipBg)
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        TelemetryRow("Distance Traveled", "%.2f m".format(r.distanceTraveledMeters))
-        TelemetryRow("Filter Frequency", "%.1f Hz".format(r.filterFrequencyHz))
-        TelemetryRow("AI Inference Latency", "%.1f us".format(r.aiInferenceLatencyUs))
-        TelemetryRow("AI Model Size", "${r.aiModelSizeBytes / 1024} KB")
-        TelemetryRow("NavIC Satellites Locked", "${r.navicSatellitesLocked}")
-        TelemetryRow("Potholes Dampened", "${r.potholesDampedCount}")
-    }
-}
-
-@Composable
-private fun TelemetryRow(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(text = label, color = TextSecondary, fontSize = 11.sp)
-        Text(text = value, color = TextChip, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+private fun TelRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, color = HomeSubtext, fontSize = 11.sp)
+        Text(value, color = HomeText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
     }
 }

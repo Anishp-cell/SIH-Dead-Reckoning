@@ -43,6 +43,73 @@ enum class NavigationMode(
     )
 }
 
+enum class SimulationStage(
+    val title: String,
+    val subtitle: String,
+    val instruction: String
+) {
+    READY(
+        "SYSTEM READY",
+        "NavIC Dual-Band L5/S Standby",
+        "Ready to Navigate • Route Loaded"
+    ),
+    NORMAL_GNSS(
+        "GNSS + INS FUSION",
+        "Dual-Band NavIC Locked • 100% Signal Integrity",
+        "In 650 m • Keep Left on Highway"
+    ),
+    GNSS_DEGRADING(
+        "GNSS SIGNAL DEGRADED",
+        "Multipath Detected • GNSS Trust ↓  INS Trust ↑",
+        "In 420 m • Keep Left on Highway"
+    ),
+    GNSS_LOST_DR_ACTIVE(
+        "DEAD RECKONING ACTIVE",
+        "GNSS Lost • AI Velocity + 15-State ESKF Active",
+        "In 250 m • Left Turn Ahead (DR Active)"
+    ),
+    DR_NAVIGATING(
+        "DR MODE • ROAD LOCKED",
+        "NHC Physics & Map Constraint Locked • Zero Lateral Drift",
+        "In 180 m • Approach Left Curve (DR Active)"
+    ),
+    DISTURBANCE_POTHOLE(
+        "DISTURBANCE DETECTED",
+        "Pothole Shock (>45 m/s³) Gated • Trajectory Stable",
+        "In 120 m • Pothole Shock Spike Gated"
+    ),
+    DR_APPROACH_TURN(
+        "APPROACHING TURN (DR)",
+        "Route-Aware DR • Gyroscope Heading Integration",
+        "In 80 m • Turning Left into Curve"
+    ),
+    DR_TURN_VERIFIED(
+        "TURN VERIFIED",
+        "Topological Spline Snapped • Curve Negotiated in DR",
+        "Curve Completed • Proceed on Route"
+    ),
+    GNSS_RESTORED(
+        "GNSS SIGNAL RESTORED",
+        "Comparing GNSS vs DR • Estimating Offset",
+        "GNSS Reacquired • Merging Solution"
+    ),
+    SEAMLESS_FUSION(
+        "SEAMLESS FUSION ACTIVE",
+        "Continuous Kalman Glide Active (Δp = 0.006 m/step)",
+        "Zero-Teleportation Recovery (0.006 m/step)"
+    ),
+    NORMAL_RESTORED(
+        "GNSS + INS RESTORED",
+        "All Sensors Healthy • Optimal Navigation State",
+        "Proceed 100 m to Destination"
+    ),
+    DESTINATION_REACHED(
+        "DESTINATION REACHED",
+        "Route Completed • 100% Lane Integrity Preserved",
+        "Arrived at Destination Point"
+    )
+}
+
 enum class ActiveAlgorithm(
     val chipLabel: String,
     val detailText: String
@@ -83,13 +150,16 @@ enum class ActiveAlgorithm(
 
 data class VehicleState(
     val timeSeconds: Float = 0.0f,
-    val totalScenarioSeconds: Float = 55.0f,
+    val totalScenarioSeconds: Float = 48.0f,
+    val routeProgress: Float = 0.0f, // 0.0f to 1.0f physical progress along route
+    val stage: SimulationStage = SimulationStage.READY,
     val mode: NavigationMode = NavigationMode.READY,
     val vehicleType: VehicleType = VehicleType.CAR_4W,
     val speedKmh: Float = 0.0f,
     val speedMs: Float = 0.0f,
     val speedUncertaintyMs: Float = 0.15f,
     val distanceTraveledMeters: Float = 0.0f,
+    val distanceRemainingMeters: Float = 1400.0f,
     val crossTrackMeters: Float = 0.22f,
     val recoveryStepMeters: Float = 0.006f,
     val activeAlgorithm: ActiveAlgorithm = ActiveAlgorithm.STANDBY,
@@ -100,8 +170,19 @@ data class VehicleState(
     val ghostLateralOffsetRatio: Float = 0.0f,
     val covarianceHaloRadiusDp: Float = 14.0f,
     val potholePulsing: Boolean = false,
+    val showPotholeHazard: Boolean = false,
     val showGpsLostAlert: Boolean = false,
     val gpsLostAlertMessage: String = "GPS Signal Lost • Dead Reckoning Autonomous Mode Active",
+    val turnInstruction: String = "In 650 m • Keep Left on Highway",
+    val gnssTrustPercent: Int = 100,
+    val insTrustPercent: Int = 40,
+    val aiSpeedEstimateKmh: Float = 62.0f,
+    val speedVarianceSigma2: Float = 0.84f,
+    val headingSigmaDeg: Float = 1.7f,
+    val isMapMatchingLocked: Boolean = true,
+    val isNhcActive: Boolean = true,
+    val isDisturbanceGated: Boolean = false,
+    val showDiagnosticsPanel: Boolean = false,
     val isStarted: Boolean = false,
     val isRunning: Boolean = false,
     val isPaused: Boolean = false,
@@ -109,7 +190,7 @@ data class VehicleState(
 )
 
 data class AuditResults(
-    val distanceTraveledMeters: Float = 113.54f,
+    val distanceTraveledMeters: Float = 1420.0f,
     val driftPercentAchieved: Float = 3.50f,
     val driftPercentTarget: Float = 10.00f,
     val driftPassed: Boolean = true,
