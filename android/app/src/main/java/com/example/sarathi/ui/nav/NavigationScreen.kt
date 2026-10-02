@@ -3,15 +3,13 @@ package com.example.sarathi.ui.nav
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,29 +28,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.sarathi.model.ActiveAlgorithm
 import com.example.sarathi.model.NavigationMode
 import com.example.sarathi.model.VehicleState
-import com.example.sarathi.theme.BorderLight
-import com.example.sarathi.theme.NavRouteBlue
-import com.example.sarathi.theme.StatusGnssBgLight
-import com.example.sarathi.theme.StatusGnssGreen
-import com.example.sarathi.theme.StatusOutageAmber
-import com.example.sarathi.theme.StatusOutageBgLight
-import com.example.sarathi.theme.StatusRecoveryBgLight
-import com.example.sarathi.theme.StatusRecoveryBlue
-import com.example.sarathi.theme.SurfaceCardLight
-import com.example.sarathi.theme.SurfaceCardSubtle
-import com.example.sarathi.theme.SurfaceManeuverGreen
-import com.example.sarathi.theme.SurfaceManeuverTunnel
-import com.example.sarathi.theme.TextMutedDark
-import com.example.sarathi.theme.TextOnGreen
-import com.example.sarathi.theme.TextPrimaryDark
-import com.example.sarathi.theme.TextSecondaryDark
-import java.util.Locale
+import com.example.sarathi.theme.ChipBg
+import com.example.sarathi.theme.ChipBorder
+import com.example.sarathi.theme.DividerColor
+import com.example.sarathi.theme.MapBg
+import com.example.sarathi.theme.PuckBlue
+import com.example.sarathi.theme.SheetBg
+import com.example.sarathi.theme.StatusAmber
+import com.example.sarathi.theme.StatusBlue
+import com.example.sarathi.theme.StatusGreen
+import com.example.sarathi.theme.StatusRed
+import com.example.sarathi.theme.TextChip
+import com.example.sarathi.theme.TextPrimary
+import com.example.sarathi.theme.TextSecondary
+import com.example.sarathi.theme.TextStat
+import com.example.sarathi.theme.TextStatLabel
 
 @Composable
 fun NavigationScreen(
@@ -60,383 +59,267 @@ fun NavigationScreen(
     onStopSimulation: () -> Unit,
     onTogglePause: () -> Unit,
     onRestart: () -> Unit,
-    onOpenAudit: () -> Unit,
-    modifier: Modifier = Modifier
+    onOpenAudit: () -> Unit
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
-        // 1. Vector Road Canvas (100% of background)
-        VectorMapCanvas(state = state)
+    Box(modifier = Modifier.fillMaxSize()) {
 
-        // 2. Top Maneuver Banner & Dynamic Status Pill
-        Column(
+        // ── Full-screen map canvas ───────────────────────────────────────────
+        SarathiMapCanvas(
+            state = state,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // ── Top header bar: SAARTHI + status chips ───────────────────────────
+        TopStatusBar(state = state)
+
+        // ── Compass rose (top-right) ─────────────────────────────────────────
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .align(Alignment.TopCenter)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .align(Alignment.TopEnd)
+                .padding(top = 116.dp, end = 16.dp)
+                .size(40.dp)
+                .clip(CircleShape)
+                .background(ChipBg.copy(alpha = 0.9f)),
+            contentAlignment = Alignment.Center
         ) {
-            // Maneuver Banner (Google Maps Emerald Green or Dark Tunnel)
-            ManeuverBanner(state = state)
+            Text(
+                text = "N",
+                color = TextPrimary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                textAlign = TextAlign.Center
+            )
+        }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Dynamic Status Pill
-            DynamicStatusPill(state = state)
-
-            // Non-Intrusive Smooth GPS Lost Alert
-            AnimatedVisibility(
-                visible = state.showGpsLostAlert,
-                enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-                exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut()
+        // ── GPS Lost toast ───────────────────────────────────────────────────
+        AnimatedVisibility(
+            visible = state.showGpsLostAlert,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 130.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color(0xDD1C2333))
+                    .padding(horizontal = 20.dp, vertical = 10.dp)
             ) {
-                GpsLostToast(message = state.gpsLostAlertMessage)
+                Text(
+                    text = "GPS Signal Lost  •  Dead Reckoning Active",
+                    color = StatusAmber,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
 
-        // 3. Bottom Floating Speedometer, Control Buttons & Telemetry Card
-        BottomTelemetryCard(
-            state = state,
-            onStartSimulation = onStartSimulation,
-            onStopSimulation = onStopSimulation,
-            onTogglePause = onTogglePause,
-            onRestart = onRestart,
-            onOpenAudit = onOpenAudit,
+        // ── Bottom sheet ─────────────────────────────────────────────────────
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 14.dp, vertical = 10.dp)
-        )
+                .fillMaxWidth()
+        ) {
+            BottomSheet(
+                state = state,
+                onStartSimulation = onStartSimulation,
+                onStopSimulation = onStopSimulation,
+                onTogglePause = onTogglePause,
+                onRestart = onRestart,
+                onOpenAudit = onOpenAudit
+            )
+        }
     }
 }
 
+// ── Top status bar ─────────────────────────────────────────────────────────────
 @Composable
-private fun ManeuverBanner(state: VehicleState) {
-    val bannerBg = if (state.inTunnel) SurfaceManeuverTunnel else SurfaceManeuverGreen
+private fun TopStatusBar(state: VehicleState) {
+    val gnssAvailable = !state.inTunnel && state.isRunning
+    val drActive      = state.inTunnel || state.mode == NavigationMode.DEAD_RECKONING
 
-    val maneuverTitle = when {
-        !state.isStarted -> "Ready to Navigate • Tap Start Below"
-        state.timeSeconds < 15.0f -> "In 500m Enter Coventry Underpass"
-        state.inTunnel -> "Inside Underpass • Dead Reckoning Active"
-        state.mode == NavigationMode.RECOVERING -> "Exiting Underpass • Soft Recovery Damping"
-        else -> "Route Complete • Destination Reached"
-    }
-
-    val maneuverSub = when {
-        !state.isStarted -> "A45 Dunchurch Highway (ISRO NavIC Dual-Band)"
-        state.timeSeconds < 15.0f -> "Straight on Highway • Satellite Lock Active"
-        state.inTunnel -> "Sub-surface Outage (${(state.timeSeconds - 15.0f).toInt()}s blackout elapsed)"
-        state.mode == NavigationMode.RECOVERING -> "Continuous Kalman Gain Damping (Zero Teleportation)"
-        else -> "All Benchmarks Verified Passed"
-    }
-
-    Box(
+    Row(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(4.dp, RoundedCornerShape(12.dp))
-            .clip(RoundedCornerShape(12.dp))
-            .background(bannerBg)
-            .padding(horizontal = 16.dp, vertical = 10.dp)
+            .background(MapBg.copy(alpha = 0.92f))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
-            Text(
-                text = maneuverTitle,
-                color = TextOnGreen,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = maneuverSub,
-                color = TextOnGreen.copy(alpha = 0.85f),
-                fontSize = 11.sp
-            )
-        }
-    }
-}
-
-@Composable
-private fun DynamicStatusPill(state: VehicleState) {
-    val (bgColor, dotColor, textColor, pillText) = when (state.mode) {
-        NavigationMode.READY -> Quadruple(
-            StatusGnssBgLight,
-            StatusGnssGreen,
-            StatusGnssGreen,
-            "GPS READY (NavIC Dual-Band L5/S)"
-        )
-        NavigationMode.GNSS_LOCKED -> Quadruple(
-            StatusGnssBgLight,
-            StatusGnssGreen,
-            StatusGnssGreen,
-            "GNSS LOCKED (NavIC + GPS)"
-        )
-        NavigationMode.DEAD_RECKONING -> Quadruple(
-            StatusOutageBgLight,
-            StatusOutageAmber,
-            StatusOutageAmber,
-            "AI DEAD RECKONING ACTIVE [Tunnel: ${(state.timeSeconds - 15.0f).toInt()}s]"
-        )
-        NavigationMode.RECOVERING -> Quadruple(
-            StatusRecoveryBgLight,
-            StatusRecoveryBlue,
-            StatusRecoveryBlue,
-            "RECOVERING (Soft Damping Alpha=0.85)"
-        )
-        NavigationMode.COMPLETED -> Quadruple(
-            StatusGnssBgLight,
-            StatusGnssGreen,
-            StatusGnssGreen,
-            "DESTINATION REACHED (Audit Ready)"
-        )
-    }
-
-    Box(
-        modifier = Modifier
-            .shadow(2.dp, RoundedCornerShape(20.dp))
-            .clip(RoundedCornerShape(20.dp))
-            .background(bgColor)
-            .border(1.dp, dotColor.copy(alpha = 0.35f), RoundedCornerShape(20.dp))
-            .padding(horizontal = 12.dp, vertical = 5.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(7.dp)
-                    .clip(CircleShape)
-                    .background(dotColor)
-            )
-            Spacer(modifier = Modifier.width(7.dp))
-            Text(
-                text = pillText,
-                color = textColor,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Monospace
-            )
-        }
-    }
-}
-
-@Composable
-private fun GpsLostToast(message: String) {
-    Box(
-        modifier = Modifier
-            .padding(top = 6.dp)
-            .shadow(4.dp, RoundedCornerShape(8.dp))
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFFFEF3C7))
-            .border(1.dp, Color(0xFFF59E0B), RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-    ) {
+        // Logo + name
         Text(
-            text = message,
-            color = Color(0xFF92400E),
-            fontSize = 11.sp,
+            text = "A  SAARTHI",
+            color = TextPrimary,
+            fontSize = 16.sp,
             fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace
+            letterSpacing = 1.sp,
+            modifier = Modifier.weight(1f)
         )
+
+        // Status chips (GNSS, NETWORK, DR MODE)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            StatusChip(
+                label = "GNSS",
+                status = if (gnssAvailable) "ACTIVE" else "UNAVAIL.",
+                dotColor = if (gnssAvailable) StatusGreen else StatusRed
+            )
+            StatusChip(
+                label = "NETWORK",
+                status = if (state.isRunning) "ONLINE" else "OFFLINE",
+                dotColor = if (state.isRunning) StatusGreen else StatusRed
+            )
+            StatusChip(
+                label = "DR MODE",
+                status = if (drActive) "ACTIVE" else "STANDBY",
+                dotColor = if (drActive) StatusGreen else StatusAmber
+            )
+        }
     }
 }
 
 @Composable
-private fun BottomTelemetryCard(
+private fun StatusChip(label: String, status: String, dotColor: Color) {
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(ChipBg)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(text = label, color = TextSecondary, fontSize = 8.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 0.5.sp)
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(dotColor)
+        )
+        Text(text = status, color = dotColor, fontSize = 8.sp, fontWeight = FontWeight.Bold)
+    }
+}
+
+// ── Bottom stats sheet ─────────────────────────────────────────────────────────
+@Composable
+private fun BottomSheet(
     state: VehicleState,
     onStartSimulation: () -> Unit,
     onStopSimulation: () -> Unit,
     onTogglePause: () -> Unit,
     onRestart: () -> Unit,
-    onOpenAudit: () -> Unit,
-    modifier: Modifier = Modifier
+    onOpenAudit: () -> Unit
 ) {
-    Box(
-        modifier = modifier
+    Column(
+        modifier = Modifier
             .fillMaxWidth()
-            .shadow(6.dp, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp))
-            .background(SurfaceCardLight)
-            .border(1.dp, BorderLight, RoundedCornerShape(16.dp))
-            .padding(14.dp)
+            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .background(SheetBg)
+            .padding(horizontal = 24.dp, vertical = 20.dp)
     ) {
-        Column {
-            // Speedometer & Primary Metrics Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Large Digital Speedometer
-                Column {
-                    Row(verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            text = String.format(Locale.US, "%.1f", state.speedKmh),
-                            color = NavRouteBlue,
-                            fontSize = 36.sp,
-                            fontWeight = FontWeight.Black,
-                            fontFamily = FontFamily.Monospace
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "km/h",
-                            color = TextSecondaryDark,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(bottom = 5.dp)
-                        )
-                    }
-                    Text(
-                        text = "AI SPEED: " + String.format(Locale.US, "%.1f", state.speedMs) + " m/s",
-                        color = TextMutedDark,
-                        fontSize = 10.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
 
-                // Distance & Lane Offset Telemetry
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "DIST: " + String.format(Locale.US, "%.0f", state.distanceTraveledMeters) + " m",
-                        color = TextPrimaryDark,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "LANE OFFSET: " + String.format(Locale.US, "%.2f", state.crossTrackMeters) + " m",
-                        color = TextSecondaryDark,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = "VEHICLE: " + state.vehicleType.badge,
-                        color = NavRouteBlue,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
+        // Algorithm badge (active state indicator)
+        if (state.isRunning) {
+            AlgorithmBadge(state = state)
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
-            Spacer(modifier = Modifier.height(10.dp))
+        // Three stat columns: Speed | Heading | Confidence
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            StatColumn(
+                icon = "speed",
+                value = "%.0f".format(state.speedKmh),
+                unit = "km/h"
+            )
 
-            // Contextual Algorithm Status Ribbon
+            // Divider
             Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(SurfaceCardSubtle)
-                    .border(1.dp, BorderLight, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    .width(1.dp)
+                    .height(48.dp)
+                    .background(DividerColor)
+            )
+
+            StatColumn(
+                icon = "heading",
+                value = "%.1f".format(128.4f + (state.roadCurveDegrees * 0.3f)),
+                unit = "Heading"
+            )
+
+            Box(
+                modifier = Modifier
+                    .width(1.dp)
+                    .height(48.dp)
+                    .background(DividerColor)
+            )
+
+            StatColumn(
+                icon = "confidence",
+                value = "%.0f%%".format(confidenceFromState(state)),
+                unit = "Confidence"
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Control buttons
+        when {
+            !state.isStarted -> {
+                Button(
+                    onClick = onStartSimulation,
+                    modifier = Modifier.fillMaxWidth().height(52.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = PuckBlue)
                 ) {
-                    Text(
-                        text = "ACTIVE ALGORITHM:",
-                        color = TextMutedDark,
-                        fontSize = 9.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = state.activeAlgorithm.chipLabel,
-                        color = NavRouteBlue,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Monospace,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text("START SIMULATION", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp, letterSpacing = 1.sp)
                 }
             }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Interactive Simulation Controls (Start, Pause, Stop, Restart)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                if (!state.isStarted || !state.isRunning) {
-                    Button(
-                        onClick = if (!state.isStarted) onStartSimulation else onTogglePause,
-                        colors = ButtonDefaults.buttonColors(containerColor = NavRouteBlue, contentColor = Color.White),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1.0f)
-                    ) {
-                        Text(
-                            text = if (!state.isStarted) "START" else "RESUME",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-                } else {
-                    Button(
-                        onClick = onTogglePause,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE2E8F0), contentColor = TextPrimaryDark),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1.0f)
-                    ) {
-                        Text(
-                            text = "PAUSE",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-                }
-
-                if (state.isStarted) {
-                    Button(
-                        onClick = onStopSimulation,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFEE2E2), contentColor = Color(0xFFDC2626)),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.weight(1.0f)
-                    ) {
-                        Text(
-                            text = "STOP",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
-                        )
-                    }
-
+            state.isCompleted -> {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(
                         onClick = onRestart,
-                        colors = ButtonDefaults.buttonColors(containerColor = SurfaceCardSubtle, contentColor = TextSecondaryDark),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.border(1.dp, BorderLight, RoundedCornerShape(8.dp))
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PuckBlue)
                     ) {
-                        Text(
-                            text = "RESTART",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Monospace
-                        )
+                        Text("RESTART", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
+                    Button(
+                        onClick = onOpenAudit,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = StatusGreen)
+                    ) {
+                        Text("VIEW AUDIT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }
-
-            // Post-Completion Button Prompt
-            AnimatedVisibility(
-                visible = state.isCompleted,
-                enter = fadeIn(),
-                exit = fadeOut()
-            ) {
-                Column {
-                    Spacer(modifier = Modifier.height(8.dp))
+            else -> {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Button(
-                        onClick = onOpenAudit,
-                        colors = ButtonDefaults.buttonColors(containerColor = StatusGnssGreen, contentColor = Color.White),
-                        shape = RoundedCornerShape(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        onClick = onTogglePause,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = if (state.isRunning) StatusAmber else StatusGreen
+                        )
                     ) {
                         Text(
-                            text = "VIEW PERFORMANCE AUDIT REPORT",
+                            if (state.isRunning) "PAUSE" else "RESUME",
+                            color = Color.White,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 12.sp,
-                            fontFamily = FontFamily.Monospace
+                            fontSize = 13.sp
                         )
+                    }
+                    Button(
+                        onClick = onStopSimulation,
+                        modifier = Modifier.weight(1f).height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = StatusRed.copy(alpha = 0.85f))
+                    ) {
+                        Text("STOP", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }
@@ -444,4 +327,67 @@ private fun BottomTelemetryCard(
     }
 }
 
-data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
+@Composable
+private fun StatColumn(icon: String, value: String, unit: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        // Icon placeholder (text-based since no vector resources referenced)
+        Text(
+            text = when (icon) {
+                "speed"      -> "~"
+                "heading"    -> "o"
+                "confidence" -> "||"
+                else         -> "+"
+            },
+            color = TextStatLabel,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Spacer(modifier = Modifier.height(2.dp))
+        Text(
+            text = value,
+            color = TextStat,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = unit,
+            color = TextStatLabel,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium
+        )
+    }
+}
+
+@Composable
+private fun AlgorithmBadge(state: VehicleState) {
+    val (label, color) = when (state.mode) {
+        NavigationMode.GNSS_LOCKED    -> "GNSS LOCKED  •  NavIC Dual-Band" to StatusGreen
+        NavigationMode.DEAD_RECKONING -> "DEAD RECKONING  •  ${state.activeAlgorithm.chipLabel}" to StatusAmber
+        NavigationMode.RECOVERING     -> "SOFT RECOVERY  •  Kalman Glide" to StatusBlue
+        NavigationMode.COMPLETED      -> "ROUTE COMPLETE" to StatusGreen
+        else                          -> "READY  •  NavIC Standby" to TextSecondary
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(10.dp))
+            .background(color.copy(alpha = 0.10f))
+            .padding(horizontal = 14.dp, vertical = 8.dp)
+    ) {
+        Text(
+            text = label,
+            color = color,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp
+        )
+    }
+}
+
+private fun confidenceFromState(state: VehicleState): Float = when {
+    !state.isRunning               -> 0f
+    state.mode == NavigationMode.DEAD_RECKONING -> (91f - state.tunnelProgress * 18f).coerceAtLeast(72f)
+    state.mode == NavigationMode.RECOVERING     -> 87f
+    else                                        -> 96f
+}

@@ -1,414 +1,440 @@
 package com.example.sarathi.ui.nav
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.drawscope.clipRect
 import com.example.sarathi.model.NavigationMode
 import com.example.sarathi.model.VehicleState
-import com.example.sarathi.model.VehicleType
+import com.example.sarathi.theme.ChipBg
 import com.example.sarathi.theme.GhostDriftLine
 import com.example.sarathi.theme.GhostDriftRed
-import com.example.sarathi.theme.MapLaneActive
-import com.example.sarathi.theme.MapLaneBorder
-import com.example.sarathi.theme.MapRoadAsphalt
-import com.example.sarathi.theme.MapRoadBorder
-import com.example.sarathi.theme.MapRoadMarking
-import com.example.sarathi.theme.MapRoadTunnel
-import com.example.sarathi.theme.MapTerrainBg
-import com.example.sarathi.theme.NavRouteBlue
-import com.example.sarathi.theme.StatusGnssGreen
-import com.example.sarathi.theme.TunnelOverlayLight
+import com.example.sarathi.theme.MapBg
+import com.example.sarathi.theme.MapCurb
+import com.example.sarathi.theme.MapGrass
+import com.example.sarathi.theme.MapRoadDark
+import com.example.sarathi.theme.MapRoadLight
+import com.example.sarathi.theme.MapRouteLine
+import com.example.sarathi.theme.MapRouteGlow
+import com.example.sarathi.theme.MapTerrain
+import com.example.sarathi.theme.PuckBlue
+import com.example.sarathi.theme.PuckGlow
+import com.example.sarathi.theme.StatusBlue
+import com.example.sarathi.theme.StatusGreen
+import com.example.sarathi.theme.TunnelDark
+import com.example.sarathi.theme.TunnelWall
+import kotlin.math.sin
+import kotlin.math.cos
 
 @Composable
-fun VectorMapCanvas(
+fun SarathiMapCanvas(
     state: VehicleState,
     modifier: Modifier = Modifier
 ) {
+    // Animate scroll offset continuously when running - this drives forward motion
+    val infiniteTransition = rememberInfiniteTransition(label = "mapScroll")
+
+    // Duration inversely proportional to speed — higher speed = faster scroll
+    val scrollDuration = if (state.isRunning && state.speedKmh > 0.5f) {
+        // At 50 km/h, one scroll cycle takes ~800ms (tuned for visual feel)
+        (800.0f * (50.0f / state.speedKmh.coerceAtLeast(1f))).toInt().coerceIn(200, 3000)
+    } else {
+        10_000_000 // effectively frozen
+    }
+
+    // scrollT goes 0..1 continuously, repeating — each cycle = 1 road "tile"
+    val scrollT by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = scrollDuration, easing = LinearEasing)
+        ),
+        label = "scrollT"
+    )
+
+    // Lateral sway animation — smooth left/right gentle curve
+    val swayT by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2.0 * Math.PI).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 7000, easing = LinearEasing)
+        ),
+        label = "swayT"
+    )
+
     Canvas(modifier = modifier.fillMaxSize()) {
         val w = size.width
         val h = size.height
 
-        val roadWidth = w * 0.74f
-        val roadLeft = (w - roadWidth) / 2.0f
-        val roadRight = roadLeft + roadWidth
-        val roadCenterX = w / 2.0f
-        val laneWidth = roadWidth / 2.0f
-
-        // Pixels traveled tied to real sensor fusion distance (35 px per meter)
-        val distancePx = state.distanceTraveledMeters * 35.0f
-
-        // 1. Map Terrain Canvas (Google Maps Soft Light Terrain)
-        drawRect(
-            color = MapTerrainBg,
-            topLeft = Offset(0.0f, 0.0f),
-            size = size
+        // Draw the full navigation map
+        drawNavigationMap(
+            state = state,
+            scrollT = scrollT,
+            swayT = swayT,
+            w = w,
+            h = h
         )
+    }
+}
 
-        // 2. Dynamic Moving Scenery: City Blocks & Roadside Features scrolling downward
-        val blockHeight = 110.0f
-        val blockSpacing = 170.0f
-        val sceneryScroll = distancePx % blockSpacing
-        val numBlocks = (h / blockSpacing).toInt() + 3
+private fun DrawScope.drawNavigationMap(
+    state: VehicleState,
+    scrollT: Float,
+    swayT: Float,
+    w: Float,
+    h: Float
+) {
+    val cx = w / 2f
 
-        for (i in -1..numBlocks) {
-            val blockY = (i * blockSpacing) + sceneryScroll
-            val buildingWidth = roadLeft - 28.0f
-            if (buildingWidth > 20.0f) {
-                // Left building block
-                drawRoundRect(
-                    color = Color(0xFFE2E8F0),
-                    topLeft = Offset(14.0f, blockY),
-                    size = Size(buildingWidth, blockHeight),
-                    cornerRadius = CornerRadius(10.0f, 10.0f)
-                )
-                // Left roadside green patch
-                drawCircle(
-                    color = Color(0xFFC6E7CE),
-                    center = Offset(roadLeft - 10.0f, blockY + (blockHeight / 2.0f)),
-                    radius = 8.0f
-                )
+    // ── 1. Background ──────────────────────────────────────────────────────────
+    drawRect(
+        color = if (state.inTunnel) TunnelDark else MapBg,
+        size = Size(w, h)
+    )
 
-                // Right building block
-                drawRoundRect(
-                    color = Color(0xFFE2E8F0),
-                    topLeft = Offset(roadRight + 14.0f, blockY),
-                    size = Size(buildingWidth, blockHeight),
-                    cornerRadius = CornerRadius(10.0f, 10.0f)
-                )
-                // Right roadside green patch
-                drawCircle(
-                    color = Color(0xFFC6E7CE),
-                    center = Offset(roadRight + 10.0f, blockY + (blockHeight / 2.0f)),
-                    radius = 8.0f
-                )
-            }
-        }
+    // ── 2. Terrain blocks (grass areas beside road) ────────────────────────────
+    if (!state.inTunnel) {
+        drawTerrainBlocks(cx, w, h)
+    } else {
+        drawTunnelWalls(cx, w, h, scrollT)
+    }
 
-        // 3. Road Surface (Clean White Asphalt or Soft Tunnel Slate)
-        val roadSurfaceColor = if (state.inTunnel) MapRoadTunnel else MapRoadAsphalt
-        drawRect(
-            color = roadSurfaceColor,
-            topLeft = Offset(roadLeft, 0.0f),
-            size = Size(roadWidth, h)
-        )
+    // ── 3. Perspective road (the key: vanishes at horizon, wide at bottom) ─────
+    // Slight lateral curve based on state
+    val curveLean = state.carLateralOffsetRatio * 0.08f  // subtle steering lean
 
-        // 4. Moving Road Texture / Joints (subtle downward motion)
-        val jointSpacing = 280.0f
-        val jointScroll = distancePx % jointSpacing
-        val numJoints = (h / jointSpacing).toInt() + 2
-        for (j in -1..numJoints) {
-            val jointY = (j * jointSpacing) + jointScroll
-            drawLine(
-                color = Color(0xFFE2E8F0).copy(alpha = 0.6f),
-                start = Offset(roadLeft, jointY),
-                end = Offset(roadRight, jointY),
-                strokeWidth = 1.0f
-            )
-        }
+    val vanishX = cx + curveLean * w * 0.4f  // vanishing point on horizon
+    val vanishY = h * 0.30f                   // horizon line at 30% from top
 
-        // 5. Road Outer Borders (Clean Curbs)
-        val curbBorderColor = if (state.inTunnel) Color(0xFF94A3B8) else MapRoadBorder
+    // Road boundaries at bottom of screen
+    val roadHalfWidthBottom = w * 0.44f
+    val roadLeftBottom  = cx - roadHalfWidthBottom
+    val roadRightBottom = cx + roadHalfWidthBottom
+
+    drawPerspectiveRoad(
+        vanishX = vanishX,
+        vanishY = vanishY,
+        roadLeftBottom = roadLeftBottom,
+        roadRightBottom = roadRightBottom,
+        h = h,
+        w = w,
+        state = state
+    )
+
+    // ── 4. Center dashed lane markings — scrolling with scrollT ───────────────
+    drawScrollingDashes(
+        vanishX = vanishX,
+        vanishY = vanishY,
+        cx = cx,
+        h = h,
+        scrollT = scrollT,
+        state = state
+    )
+
+    // ── 5. Blue route overlay line ─────────────────────────────────────────────
+    drawRouteOverlay(
+        vanishX = vanishX,
+        vanishY = vanishY,
+        cx = cx,
+        h = h,
+        state = state
+    )
+
+    // ── 6. Ghost drift marker (dead reckoning uncorrected path) ───────────────
+    if (state.inTunnel && state.ghostLateralOffsetRatio > 0.02f) {
+        val ghostX = cx + state.ghostLateralOffsetRatio * w * 0.18f
+        drawGhostMarker(ghostX, h * 0.60f)
+    }
+
+    // ── 7. Recovery guide line ─────────────────────────────────────────────────
+    if (state.mode == NavigationMode.RECOVERING) {
         drawLine(
-            color = curbBorderColor,
-            start = Offset(roadLeft, 0.0f),
-            end = Offset(roadLeft, h),
-            strokeWidth = 2.dp.toPx()
+            color = StatusGreen.copy(alpha = 0.7f),
+            start = Offset(cx, h * 0.60f),
+            end = Offset(cx, h * 0.45f),
+            strokeWidth = 2f,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f))
         )
-        drawLine(
-            color = curbBorderColor,
-            start = Offset(roadRight, 0.0f),
-            end = Offset(roadRight, h),
-            strokeWidth = 2.dp.toPx()
-        )
+    }
 
-        // 6. Active Lane Clamping Corridor (Translucent blue guidance corridor)
-        val activeLaneLeft = roadCenterX - (laneWidth / 2.0f)
-        drawRect(
-            color = MapLaneActive,
-            topLeft = Offset(activeLaneLeft, 0.0f),
-            size = Size(laneWidth, h)
-        )
-        drawLine(
-            color = MapLaneBorder.copy(alpha = 0.4f),
-            start = Offset(activeLaneLeft, 0.0f),
-            end = Offset(activeLaneLeft, h),
-            strokeWidth = 1.5.dp.toPx()
-        )
-        drawLine(
-            color = MapLaneBorder.copy(alpha = 0.4f),
-            start = Offset(activeLaneLeft + laneWidth, 0.0f),
-            end = Offset(activeLaneLeft + laneWidth, h),
-            strokeWidth = 1.5.dp.toPx()
-        )
+    // ── 8. Vehicle puck — always at fixed position (world scrolls, puck stays) ─
+    val puckY = h * 0.60f
+    drawVehiclePuck(cx, puckY, state)
 
-        // 7. Continuous Forward-Moving Center Dashed Line (Flows downward)
-        val dashPeriod = 72.0f
-        val dashPhase = distancePx % dashPeriod
-        val dashEffect = PathEffect.dashPathEffect(floatArrayOf(40.0f, 32.0f), dashPhase)
-        drawLine(
-            color = MapRoadMarking,
-            start = Offset(roadCenterX, -dashPeriod),
-            end = Offset(roadCenterX, h + dashPeriod),
-            strokeWidth = 3.dp.toPx(),
-            pathEffect = dashEffect
+    // ── 9. Covariance halo (ESKF 15-state uncertainty ring) ───────────────────
+    if (state.isRunning) {
+        val haloR = (state.covarianceHaloRadiusDp * density).coerceIn(20f, 60f)
+        drawCircle(
+            color = PuckGlow,
+            center = Offset(cx, puckY),
+            radius = haloR * 1.6f
         )
-
-        // 8. Tunnel Shading & Overhead Arch Portals
         if (state.inTunnel) {
-            drawRect(
-                color = TunnelOverlayLight,
-                topLeft = Offset(0.0f, 0.0f),
-                size = size
-            )
-
-            // Dynamic Overhead Arch Portals moving downward
-            val archSpacing = 220.0f
-            val archScroll = distancePx % archSpacing
-            val numArches = (h / archSpacing).toInt() + 2
-            for (a in -1..numArches) {
-                val archY = (a * archSpacing) + archScroll
-                drawLine(
-                    color = Color(0xFF64748B).copy(alpha = 0.45f),
-                    start = Offset(roadLeft - 8.0f, archY),
-                    end = Offset(roadRight + 8.0f, archY),
-                    strokeWidth = 2.5f
-                )
-            }
-        }
-
-        // 9. Vehicle Base Position on Screen (Smooth lateral sway & lane position)
-        val carCenterY = h * 0.65f
-        val carX = roadCenterX + (state.carLateralOffsetRatio * (laneWidth * 0.48f))
-
-        // 10. Forward Headlight Illumination Beam
-        if (state.isRunning) {
-            drawHeadlightBeam(carX, carCenterY, state.roadCurveDegrees)
-        }
-
-        // 11. Algorithmic Proof 1: Red Ghost Marker (Raw Uncorrected IMU Drift)
-        if (state.inTunnel && state.ghostLateralOffsetRatio > 0.04f) {
-            val ghostX = roadCenterX + (state.ghostLateralOffsetRatio * (laneWidth * 0.48f))
-            drawGhostDrift(ghostX, carCenterY)
-        }
-
-        // 12. Algorithmic Proof 2: 15-State ESKF Covariance Halo
-        val haloRadiusPx = state.covarianceHaloRadiusDp.dp.toPx()
-        drawCircle(
-            color = NavRouteBlue.copy(alpha = 0.16f),
-            center = Offset(carX, carCenterY),
-            radius = haloRadiusPx * 1.4f
-        )
-        drawCircle(
-            color = NavRouteBlue.copy(alpha = 0.55f),
-            center = Offset(carX, carCenterY),
-            radius = haloRadiusPx,
-            style = Stroke(width = 1.8.dp.toPx())
-        )
-
-        // 13. Algorithmic Proof 3: Pothole Shock Pulse
-        if (state.potholePulsing) {
+            // Larger growing halo during dead reckoning outage
             drawCircle(
-                color = Color(0xFFD97706).copy(alpha = 0.45f),
-                center = Offset(carX, carCenterY),
-                radius = 38.dp.toPx(),
-                style = Stroke(width = 2.2.dp.toPx())
+                color = GhostDriftRed.copy(alpha = 0.15f),
+                center = Offset(cx, puckY),
+                radius = haloR * 2.4f,
+                style = Stroke(width = 1.5f * density)
             )
-        }
-
-        // 14. Algorithmic Proof 4: Soft Recovery Magnetic Guide
-        if (state.mode == NavigationMode.RECOVERING) {
-            val targetGpsX = roadCenterX
-            drawLine(
-                color = StatusGnssGreen,
-                start = Offset(carX, carCenterY),
-                end = Offset(targetGpsX, carCenterY - 40.0f),
-                strokeWidth = 2.dp.toPx(),
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(8.0f, 8.0f))
-            )
-            drawCircle(
-                color = StatusGnssGreen,
-                center = Offset(targetGpsX, carCenterY - 40.0f),
-                radius = 5.dp.toPx()
-            )
-        }
-
-        // 15. Vehicle Custom Icon (Car vs 2-Wheeler Scooter) with smooth tilt/curve
-        rotate(degrees = state.roadCurveDegrees, pivot = Offset(carX, carCenterY)) {
-            when (state.vehicleType) {
-                VehicleType.CAR_4W -> drawCarIcon(carX, carCenterY, state.inTunnel)
-                VehicleType.BIKE_2W -> drawScooterIcon(carX, carCenterY, state.inTunnel)
-            }
         }
     }
 }
 
-private fun DrawScope.drawHeadlightBeam(x: Float, y: Float, headingDeg: Float) {
-    rotate(degrees = headingDeg, pivot = Offset(x, y)) {
-        val beamPath = Path().apply {
-            moveTo(x - 10.0f, y - 24.0f)
-            lineTo(x - 42.0f, y - 140.0f)
-            lineTo(x + 42.0f, y - 140.0f)
-            lineTo(x + 10.0f, y - 24.0f)
-            close()
-        }
-        drawPath(
-            path = beamPath,
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    Color(0x38FEF08A),
-                    Color(0x00FEF08A)
-                ),
-                startY = y - 24.0f,
-                endY = y - 140.0f
-            )
+// ── Terrain blocks: grass patches flanking the road ──────────────────────────
+private fun DrawScope.drawTerrainBlocks(cx: Float, w: Float, h: Float) {
+    // Left grass
+    drawRect(
+        color = MapGrass,
+        size = Size(cx * 0.45f, h)
+    )
+    // Right grass
+    drawRect(
+        color = MapGrass,
+        topLeft = Offset(w - cx * 0.45f, 0f),
+        size = Size(cx * 0.45f, h)
+    )
+    // Darker terrain behind road
+    drawRect(
+        color = MapTerrain,
+        topLeft = Offset(cx * 0.35f, 0f),
+        size = Size(w - cx * 0.70f, h * 0.35f)
+    )
+}
+
+// ── Tunnel wall effect ─────────────────────────────────────────────────────────
+private fun DrawScope.drawTunnelWalls(cx: Float, w: Float, h: Float, scrollT: Float) {
+    // Left wall
+    drawRect(color = TunnelWall, size = Size(cx * 0.30f, h))
+    // Right wall
+    drawRect(color = TunnelWall, topLeft = Offset(w - cx * 0.30f, 0f), size = Size(cx * 0.30f, h))
+
+    // Moving tunnel lights (overhead strip lights)
+    val lightSpacing = h * 0.22f
+    repeat(7) { i ->
+        val rawY = (i * lightSpacing) + scrollT * lightSpacing
+        val lightY = rawY % (h + lightSpacing) - lightSpacing * 0.5f
+        // Left strip
+        drawRect(
+            color = Color(0xFFD4A017).copy(alpha = 0.5f),
+            topLeft = Offset(cx * 0.06f, lightY),
+            size = Size(cx * 0.12f, 6f)
+        )
+        // Right strip
+        drawRect(
+            color = Color(0xFFD4A017).copy(alpha = 0.5f),
+            topLeft = Offset(w - cx * 0.18f, lightY),
+            size = Size(cx * 0.12f, 6f)
         )
     }
 }
 
-private fun DrawScope.drawCarIcon(x: Float, y: Float, inTunnel: Boolean) {
-    val carW = 28.0f
-    val carH = 52.0f
-    val primaryColor = if (inTunnel) Color(0xFF0284C7) else Color(0xFF1A73E8)
-
-    // Car Shadow
-    drawRoundRect(
-        color = Color(0x33000000),
-        topLeft = Offset(x - (carW / 2.0f) + 2.0f, y - (carH / 2.0f) + 4.0f),
-        size = Size(carW, carH),
-        cornerRadius = CornerRadius(7.0f, 7.0f)
+// ── Perspective road ──────────────────────────────────────────────────────────
+private fun DrawScope.drawPerspectiveRoad(
+    vanishX: Float,
+    vanishY: Float,
+    roadLeftBottom: Float,
+    roadRightBottom: Float,
+    h: Float,
+    w: Float,
+    state: VehicleState
+) {
+    // Main road fill
+    val roadPath = Path().apply {
+        moveTo(vanishX, vanishY)
+        lineTo(roadRightBottom, h)
+        lineTo(roadLeftBottom, h)
+        close()
+    }
+    drawPath(
+        path = roadPath,
+        color = if (state.inTunnel) MapRoadDark.copy(alpha = 0.92f) else MapRoadDark
     )
 
-    // Car Body (Chassis)
-    drawRoundRect(
-        color = primaryColor,
-        topLeft = Offset(x - (carW / 2.0f), y - (carH / 2.0f)),
-        size = Size(carW, carH),
-        cornerRadius = CornerRadius(6.0f, 6.0f)
+    // Road surface highlight (lighter band in center)
+    val innerW = (roadRightBottom - roadLeftBottom) * 0.42f
+    val innerLeft = (roadLeftBottom + roadRightBottom) / 2f - innerW / 2f
+    val innerPath = Path().apply {
+        moveTo(vanishX, vanishY + 2f)
+        lineTo(innerLeft + innerW, h)
+        lineTo(innerLeft, h)
+        close()
+    }
+    drawPath(
+        path = innerPath,
+        brush = Brush.verticalGradient(
+            colors = listOf(MapRoadLight.copy(alpha = 0f), MapRoadLight.copy(alpha = 0.45f)),
+            startY = vanishY,
+            endY = h
+        )
     )
 
-    // Windshield (Front glass)
-    val glassColor = Color(0xFFE0F2FE)
-    drawRoundRect(
-        color = glassColor,
-        topLeft = Offset(x - (carW * 0.38f), y - (carH * 0.32f)),
-        size = Size(carW * 0.76f, carH * 0.22f),
-        cornerRadius = CornerRadius(3.0f, 3.0f)
-    )
-
-    // Roof
-    drawRoundRect(
-        color = primaryColor.copy(alpha = 0.92f),
-        topLeft = Offset(x - (carW * 0.34f), y - (carH * 0.08f)),
-        size = Size(carW * 0.68f, carH * 0.24f),
-        cornerRadius = CornerRadius(3.0f, 3.0f)
-    )
-
-    // Rear Window
-    drawRoundRect(
-        color = glassColor,
-        topLeft = Offset(x - (carW * 0.34f), y + (carH * 0.18f)),
-        size = Size(carW * 0.68f, carH * 0.14f),
-        cornerRadius = CornerRadius(2.0f, 2.0f)
-    )
-
-    // Front Headlights
-    drawCircle(color = Color(0xFFFEF08A), center = Offset(x - (carW * 0.35f), y - (carH * 0.46f)), radius = 2.8f)
-    drawCircle(color = Color(0xFFFEF08A), center = Offset(x + (carW * 0.35f), y - (carH * 0.46f)), radius = 2.8f)
-
-    // Rear Tail Lights
-    drawCircle(color = Color(0xFFEF4444), center = Offset(x - (carW * 0.35f), y + (carH * 0.44f)), radius = 2.2f)
-    drawCircle(color = Color(0xFFEF4444), center = Offset(x + (carW * 0.35f), y + (carH * 0.44f)), radius = 2.2f)
-}
-
-private fun DrawScope.drawScooterIcon(x: Float, y: Float, inTunnel: Boolean) {
-    val scooterW = 20.0f
-    val scooterH = 48.0f
-    val primaryColor = if (inTunnel) Color(0xFF0284C7) else Color(0xFF1E8E3E)
-
-    // Scooter Shadow
-    drawRoundRect(
-        color = Color(0x33000000),
-        topLeft = Offset(x - (scooterW / 2.0f) + 2.0f, y - (scooterH / 2.0f) + 3.0f),
-        size = Size(scooterW, scooterH),
-        cornerRadius = CornerRadius(6.0f, 6.0f)
-    )
-
-    // Scooter Body (Slim chassis)
-    drawRoundRect(
-        color = primaryColor,
-        topLeft = Offset(x - (scooterW * 0.32f), y - (scooterH * 0.40f)),
-        size = Size(scooterW * 0.64f, scooterH * 0.80f),
-        cornerRadius = CornerRadius(5.0f, 5.0f)
-    )
-
-    // Handlebars
+    // Left shoulder curb
     drawLine(
-        color = Color(0xFF1E293B),
-        start = Offset(x - (scooterW * 0.65f), y - (scooterH * 0.35f)),
-        end = Offset(x + (scooterW * 0.65f), y - (scooterH * 0.35f)),
-        strokeWidth = 3.2f
+        color = MapCurb.copy(alpha = 0.8f),
+        start = Offset(vanishX, vanishY),
+        end = Offset(roadLeftBottom, h),
+        strokeWidth = 2f
     )
-
-    // Seat
-    drawRoundRect(
-        color = Color(0xFF0F172A),
-        topLeft = Offset(x - (scooterW * 0.28f), y - (scooterH * 0.05f)),
-        size = Size(scooterW * 0.56f, scooterH * 0.36f),
-        cornerRadius = CornerRadius(4.0f, 4.0f)
+    // Right shoulder curb
+    drawLine(
+        color = MapCurb.copy(alpha = 0.8f),
+        start = Offset(vanishX, vanishY),
+        end = Offset(roadRightBottom, h),
+        strokeWidth = 2f
     )
-
-    // Rider Helmet Outline
-    drawCircle(
-        color = Color(0xFFF8FAFC),
-        center = Offset(x, y - (scooterH * 0.12f)),
-        radius = 5.8f
-    )
-    drawCircle(
-        color = Color(0xFF0F172A),
-        center = Offset(x, y - (scooterH * 0.12f)),
-        radius = 5.8f,
-        style = Stroke(width = 1.4f)
-    )
-
-    // Front Headlight
-    drawCircle(color = Color(0xFFFEF08A), center = Offset(x, y - (scooterH * 0.46f)), radius = 3.0f)
-
-    // Rear Tail Light
-    drawCircle(color = Color(0xFFEF4444), center = Offset(x, y + (scooterH * 0.42f)), radius = 2.2f)
 }
 
-private fun DrawScope.drawGhostDrift(ghostX: Float, y: Float) {
+// ── Scrolling dashed center lane markings ─────────────────────────────────────
+private fun DrawScope.drawScrollingDashes(
+    vanishX: Float,
+    vanishY: Float,
+    cx: Float,
+    h: Float,
+    scrollT: Float,
+    state: VehicleState
+) {
+    if (!state.isRunning && state.speedKmh < 0.5f) return
+
+    // Number of dashes visible on screen
+    val numDashes = 12
+    for (i in 0..numDashes) {
+        // tNorm = normalized position on road, 0=vanish, 1=bottom
+        // We offset by scrollT to make them scroll downward
+        val rawT = (i.toFloat() / numDashes) + scrollT / numDashes
+        val tNorm = rawT % 1f
+
+        // Skip small tNorm values near horizon (too small to see)
+        if (tNorm < 0.05f) continue
+
+        // Perspective interpolation: items near horizon are small, near camera are large
+        val tPow = tNorm * tNorm  // quadratic perspective
+
+        val x = lerp(vanishX, cx, tPow)
+        val y = lerp(vanishY, h, tPow)
+
+        // Dash length and width scale with perspective
+        val dashLen = lerp(2f, 32f, tPow)
+        val dashW   = lerp(0.5f, 3.5f, tPow)
+
+        val yEnd = lerp(vanishY, h, (tNorm + 0.025f).coerceAtMost(1f) * (tNorm + 0.025f).coerceAtMost(1f))
+
+        // Only draw every other "slot" to create dash/gap pattern
+        if (i % 2 == 0) {
+            drawLine(
+                color = Color.White.copy(alpha = lerp(0.2f, 0.7f, tPow)),
+                start = Offset(x, y),
+                end = Offset(x, (y + dashLen).coerceAtMost(h)),
+                strokeWidth = dashW
+            )
+        }
+    }
+}
+
+// ── Blue route overlay ─────────────────────────────────────────────────────────
+private fun DrawScope.drawRouteOverlay(
+    vanishX: Float,
+    vanishY: Float,
+    cx: Float,
+    h: Float,
+    state: VehicleState
+) {
+    val routeHalfWidthBottom = (h - vanishY) * 0.22f
+
+    val routePath = Path().apply {
+        moveTo(vanishX, vanishY + 4f)
+        lineTo(cx + routeHalfWidthBottom, h)
+        lineTo(cx - routeHalfWidthBottom, h)
+        close()
+    }
+
+    // Glow layer
+    drawPath(
+        path = routePath,
+        brush = Brush.verticalGradient(
+            colors = listOf(MapRouteGlow.copy(alpha = 0f), MapRouteGlow),
+            startY = vanishY,
+            endY = h
+        )
+    )
+
+    // Solid route line
+    drawLine(
+        color = MapRouteLine.copy(alpha = 0.85f),
+        start = Offset(vanishX, vanishY + 2f),
+        end = Offset(cx, h),
+        strokeWidth = 4f
+    )
+
+    // Route border highlight
+    drawLine(
+        color = Color.White.copy(alpha = 0.3f),
+        start = Offset(vanishX, vanishY + 2f),
+        end = Offset(cx - 2f, h),
+        strokeWidth = 1.5f
+    )
+}
+
+// ── Vehicle puck (the blue arrow/circle at center) ────────────────────────────
+private fun DrawScope.drawVehiclePuck(x: Float, y: Float, state: VehicleState) {
+    val r = 22f * density
+
+    // Outer glow ring
+    drawCircle(color = PuckGlow, center = Offset(x, y), radius = r * 1.55f)
+
+    // White ring
+    drawCircle(
+        color = Color.White.copy(alpha = 0.9f),
+        center = Offset(x, y),
+        radius = r + 3f,
+        style = Stroke(width = 2.5f)
+    )
+
+    // Solid blue puck
+    drawCircle(color = PuckBlue, center = Offset(x, y), radius = r)
+
+    // Navigation arrow on top of puck
+    val arrowPath = Path().apply {
+        moveTo(x, y - r * 0.65f)
+        lineTo(x + r * 0.35f, y + r * 0.40f)
+        lineTo(x, y + r * 0.15f)
+        lineTo(x - r * 0.35f, y + r * 0.40f)
+        close()
+    }
+    drawPath(path = arrowPath, color = Color.White)
+}
+
+// ── Ghost marker (red uncorrected IMU drift position) ─────────────────────────
+private fun DrawScope.drawGhostMarker(x: Float, y: Float) {
+    drawCircle(color = GhostDriftRed, center = Offset(x, y), radius = 10f * density)
+    drawCircle(
+        color = Color(0xFFEF4444),
+        center = Offset(x, y),
+        radius = 10f * density,
+        style = Stroke(width = 1.5f * density)
+    )
     drawLine(
         color = GhostDriftLine,
-        start = Offset(ghostX - 18.0f, y + 20.0f),
-        end = Offset(ghostX, y),
-        strokeWidth = 2.0f,
-        pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.0f, 6.0f))
-    )
-
-    drawCircle(
-        color = GhostDriftRed,
-        center = Offset(ghostX, y),
-        radius = 10.0f
-    )
-    drawCircle(
-        color = Color(0xFFDC2626),
-        center = Offset(ghostX, y),
-        radius = 10.0f,
-        style = Stroke(width = 1.5f)
+        start = Offset(x, y + 14f * density),
+        end = Offset(x, y + 32f * density),
+        strokeWidth = 1.5f * density,
+        pathEffect = PathEffect.dashPathEffect(floatArrayOf(5f, 4f))
     )
 }
+
+private fun lerp(a: Float, b: Float, t: Float): Float = a + (b - a) * t

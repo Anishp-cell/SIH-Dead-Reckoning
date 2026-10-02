@@ -25,290 +25,204 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sarathi.model.VehicleType
-import com.example.sarathi.theme.BorderLight
-import com.example.sarathi.theme.MapTerrainBg
-import com.example.sarathi.theme.NavRouteBlue
-import com.example.sarathi.theme.StatusGnssBgLight
-import com.example.sarathi.theme.StatusGnssGreen
-import com.example.sarathi.theme.SurfaceCardLight
-import com.example.sarathi.theme.SurfaceCardSubtle
-import com.example.sarathi.theme.TextMutedDark
-import com.example.sarathi.theme.TextPrimaryDark
-import com.example.sarathi.theme.TextSecondaryDark
+import com.example.sarathi.theme.ChipBg
+import com.example.sarathi.theme.ChipBorder
+import com.example.sarathi.theme.MapBg
+import com.example.sarathi.theme.MapTerrain
+import com.example.sarathi.theme.PuckBlue
+import com.example.sarathi.theme.StatusAmber
+import com.example.sarathi.theme.StatusGreen
+import com.example.sarathi.theme.TextChip
+import com.example.sarathi.theme.TextPrimary
+import com.example.sarathi.theme.TextSecondary
 
 @Composable
 fun HomeScreen(
     selectedVehicleType: VehicleType,
     onSelectVehicleType: (VehicleType) -> Unit,
-    onStartNavigation: () -> Unit,
-    modifier: Modifier = Modifier
+    onStartNavigation: () -> Unit
 ) {
-    val scrollState = rememberScrollState()
-
     Column(
-        modifier = modifier
+        modifier = Modifier
             .fillMaxSize()
-            .background(MapTerrainBg)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 18.dp, vertical = 20.dp)
+            .background(MapBg)
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
-        // App Header
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Header
+        Column {
+            Text(
+                text = "A  SAARTHI",
+                color = TextPrimary,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp
+            )
+            Text(
+                text = "AI-Enhanced Dead Reckoning  •  ISRO NavIC",
+                color = TextSecondary,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Normal
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = "Space Applications Centre (SAC)  •  SIH26168",
+                color = TextSecondary.copy(alpha = 0.6f),
+                fontSize = 11.sp
+            )
+        }
+
+        // Section: Vehicle
+        SectionLabel("VEHICLE PROFILE")
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            VehicleType.values().forEach { type ->
+                VehicleCard(
+                    type = type,
+                    isSelected = selectedVehicleType == type,
+                    onSelect = { onSelectVehicleType(type) }
+                )
+            }
+        }
+
+        // Section: System status
+        SectionLabel("SYSTEM STATUS")
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column {
-                Text(
-                    text = "SARATHI",
-                    color = NavRouteBlue,
-                    fontSize = 26.sp,
-                    fontWeight = FontWeight.Black,
-                    letterSpacing = 1.5.sp,
-                    fontFamily = FontFamily.Monospace
-                )
-                Text(
-                    text = "AI-ML Intelligent Dead Reckoning",
-                    color = TextSecondaryDark,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(StatusGnssBgLight)
-                    .border(1.dp, StatusGnssGreen.copy(alpha = 0.4f), RoundedCornerShape(6.dp))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
-            ) {
-                Text(
-                    text = "ISRO NavIC L5/S",
-                    color = StatusGnssGreen,
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold
-                )
-            }
+            InfoTile("NavIC L5/S", "READY", StatusGreen, modifier = Modifier.weight(1f))
+            InfoTile("SO(3) Cal.", "ACTIVE", StatusGreen, modifier = Modifier.weight(1f))
+            InfoTile("15-State ESKF", "ONLINE", StatusAmber, modifier = Modifier.weight(1f))
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
-        Text(
-            text = "Space Applications Centre (SAC), ISRO Ahmedabad • SIH26168",
-            color = TextMutedDark,
-            fontSize = 10.sp,
-            fontFamily = FontFamily.Monospace
-        )
+        // Section: Scenario
+        SectionLabel("DEMO SCENARIO")
+        ScenarioCard()
 
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // 1. Vehicle Profile Selection Card
-        Text(
-            text = "VEHICLE DYNAMICS PROFILE",
-            color = TextPrimaryDark,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            letterSpacing = 1.sp
-        )
         Spacer(modifier = Modifier.height(8.dp))
 
-        VehicleTypeOption(
-            type = VehicleType.CAR_4W,
-            isSelected = selectedVehicleType == VehicleType.CAR_4W,
-            onSelect = { onSelectVehicleType(VehicleType.CAR_4W) }
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        VehicleTypeOption(
-            type = VehicleType.BIKE_2W,
-            isSelected = selectedVehicleType == VehicleType.BIKE_2W,
-            onSelect = { onSelectVehicleType(VehicleType.BIKE_2W) }
-        )
-
-        Spacer(modifier = Modifier.height(18.dp))
-
-        // 2. Sensor Mount & Dynamic Alignment Card
-        Text(
-            text = "SENSOR MOUNT & CALIBRATION",
-            color = TextPrimaryDark,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(12.dp))
-                .clip(RoundedCornerShape(12.dp))
-                .background(SurfaceCardLight)
-                .border(1.dp, BorderLight, RoundedCornerShape(12.dp))
-                .padding(14.dp)
-        ) {
-            Column {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(8.dp)
-                            .clip(CircleShape)
-                            .background(StatusGnssGreen)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Dynamic SO(3) Calibration: READY",
-                        color = StatusGnssGreen,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
-                }
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Automatic phone-to-vehicle pitch, roll, and yaw determination. Real-time mount slip detection & pothole shock dampening active.",
-                    color = TextSecondaryDark,
-                    fontSize = 11.sp,
-                    lineHeight = 16.sp
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(18.dp))
-
-        // 3. Evaluation Scenario Card
-        Text(
-            text = "AUTOMATED EVALUATION SCENARIO",
-            color = TextPrimaryDark,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(12.dp))
-                .clip(RoundedCornerShape(12.dp))
-                .background(SurfaceCardLight)
-                .border(1.dp, BorderLight, RoundedCornerShape(12.dp))
-                .padding(14.dp)
-        ) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = "ROUTE:", color = TextMutedDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
-                    Text(text = "Dunchurch Hwy Underpass", color = TextPrimaryDark, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = "BLACKOUT DURATION:", color = TextMutedDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
-                    Text(text = "60-Second Full Outage", color = NavRouteBlue, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                }
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(text = "GROUND TRUTH:", color = TextMutedDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
-                    Text(text = "Racelogic VBOX RTK 100 Hz", color = TextSecondaryDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        // 4. Large Action Button: START NAVIGATION
+        // CTA button
         Button(
             onClick = onStartNavigation,
-            colors = ButtonDefaults.buttonColors(containerColor = NavRouteBlue, contentColor = Color.White),
-            shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(52.dp)
-                .shadow(4.dp, RoundedCornerShape(12.dp))
+                .height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = PuckBlue)
         ) {
             Text(
                 text = "START NAVIGATION",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 1.2.sp,
-                fontFamily = FontFamily.Monospace
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                letterSpacing = 1.5.sp
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(
+        text = text,
+        color = TextSecondary,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.5.sp
+    )
+}
+
+@Composable
+private fun VehicleCard(type: VehicleType, isSelected: Boolean, onSelect: () -> Unit) {
+    val borderColor = if (isSelected) PuckBlue else ChipBorder
+    val bgColor     = if (isSelected) PuckBlue.copy(alpha = 0.12f) else ChipBg
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(bgColor)
+            .border(1.dp, borderColor, RoundedCornerShape(14.dp))
+            .clickable { onSelect() }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = type.title, color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(text = type.subtitle, color = TextSecondary, fontSize = 10.sp)
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(if (isSelected) PuckBlue else ChipBorder)
+                .padding(horizontal = 10.dp, vertical = 4.dp)
+        ) {
+            Text(
+                text = if (isSelected) "ACTIVE" else "SELECT",
+                color = Color.White,
+                fontSize = 9.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp
             )
         }
     }
 }
 
 @Composable
-private fun VehicleTypeOption(
-    type: VehicleType,
-    isSelected: Boolean,
-    onSelect: () -> Unit
-) {
-    val borderColor = if (isSelected) NavRouteBlue else BorderLight
-    val bgColor = if (isSelected) Color(0xFFF0F7FF) else SurfaceCardLight
+private fun InfoTile(label: String, status: String, statusColor: Color, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(ChipBg)
+            .padding(12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .clip(CircleShape)
+                .background(statusColor)
+        )
+        Text(text = label, color = TextSecondary, fontSize = 9.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.3.sp)
+        Text(text = status, color = statusColor, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+    }
+}
 
-    Box(
+@Composable
+private fun ScenarioCard() {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .shadow(if (isSelected) 3.dp else 1.dp, RoundedCornerShape(12.dp))
-            .clip(RoundedCornerShape(12.dp))
-            .background(bgColor)
-            .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
-            .clickable { onSelect() }
-            .padding(14.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(ChipBg)
+            .border(1.dp, ChipBorder, RoundedCornerShape(14.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1.0f)) {
-                Text(
-                    text = type.title,
-                    color = if (isSelected) NavRouteBlue else TextPrimaryDark,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = type.subtitle,
-                    color = TextSecondaryDark,
-                    fontSize = 10.sp
-                )
-            }
+        ScenarioRow("ROUTE", "Dunchurch Highway Underpass")
+        ScenarioRow("BLACKOUT", "60-Second GPS Full Outage (tunnel)")
+        ScenarioRow("GROUND TRUTH", "Racelogic VBOX RTK  100 Hz")
+        ScenarioRow("SATELLITE SYS", "ISRO NavIC L5/S + GPS L1/L5")
+    }
+}
 
-            Box(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(if (isSelected) NavRouteBlue else SurfaceCardSubtle)
-                    .border(1.dp, if (isSelected) NavRouteBlue else BorderLight, RoundedCornerShape(4.dp))
-                    .padding(horizontal = 8.dp, vertical = 3.dp)
-            ) {
-                Text(
-                    text = if (isSelected) "ACTIVE" else "SELECT",
-                    color = if (isSelected) Color.White else TextMutedDark,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
-            }
-        }
+@Composable
+private fun ScenarioRow(label: String, value: String) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(text = label, color = TextSecondary, fontSize = 10.sp, fontWeight = FontWeight.Medium, letterSpacing = 0.5.sp)
+        Text(text = value, color = TextChip, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
     }
 }
