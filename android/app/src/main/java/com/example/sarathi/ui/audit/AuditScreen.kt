@@ -11,8 +11,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -21,284 +25,151 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.sarathi.model.AuditResults
-import com.example.sarathi.theme.BorderLight
-import com.example.sarathi.theme.MapTerrainBg
-import com.example.sarathi.theme.NavRouteBlue
-import com.example.sarathi.theme.StatusGnssBgLight
-import com.example.sarathi.theme.StatusGnssGreen
-import com.example.sarathi.theme.SurfaceCardLight
-import com.example.sarathi.theme.SurfaceCardSubtle
-import com.example.sarathi.theme.TextMutedDark
-import com.example.sarathi.theme.TextPrimaryDark
-import com.example.sarathi.theme.TextSecondaryDark
-import java.util.Locale
+import com.example.sarathi.theme.HomeBg
+import com.example.sarathi.theme.HomeBorder
+import com.example.sarathi.theme.HomeCardBg
+import com.example.sarathi.theme.HomeSubtext
+import com.example.sarathi.theme.HomeText
+import com.example.sarathi.theme.PuckBlue
+import com.example.sarathi.theme.StatusGreen
+import com.example.sarathi.theme.StatusRed
 
 @Composable
 fun AuditScreen(
     auditResults: AuditResults,
     onRunAgain: () -> Unit,
-    modifier: Modifier = Modifier
+    onBack: () -> Unit = {},
+    onLogoClick: () -> Unit = {}
 ) {
-    val scrollState = rememberScrollState()
-
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MapTerrainBg)
-            .verticalScroll(scrollState)
-            .padding(horizontal = 18.dp, vertical = 20.dp)
+        modifier = Modifier.fillMaxSize().background(HomeBg)
+            .verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 14.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header
+        // Top Bar: Back Button + Clickable Logo
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Column {
-                Text(
-                    text = "PERFORMANCE AUDIT",
-                    color = NavRouteBlue,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace,
-                    letterSpacing = 1.sp
-                )
-                Text(
-                    text = "ISRO SIH26168 Verification Report",
-                    color = TextSecondaryDark,
-                    fontSize = 11.sp
-                )
-            }
-
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(6.dp))
-                    .background(StatusGnssBgLight)
-                    .border(1.dp, StatusGnssGreen.copy(alpha = 0.5f), RoundedCornerShape(6.dp))
-                    .padding(horizontal = 10.dp, vertical = 4.dp)
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFE2E8F0))
+                    .clickable { onBack() },
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "PASSED",
-                    color = StatusGnssGreen,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Black,
-                    fontFamily = FontFamily.Monospace
-                )
+                Text("←", color = HomeText, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Session Meta Card
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(10.dp))
-                .clip(RoundedCornerShape(10.dp))
-                .background(SurfaceCardLight)
-                .border(1.dp, BorderLight, RoundedCornerShape(10.dp))
-                .padding(12.dp)
-        ) {
-            Column {
-                Text(
-                    text = "SCENARIO: 60-Second Full GNSS Blackout Tunnel",
-                    color = TextPrimaryDark,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    fontFamily = FontFamily.Monospace
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "BASELINE: Racelogic VBOX RTK 100 Hz Ground Truth (Coventry S1)",
-                    color = TextMutedDark,
-                    fontSize = 10.sp,
-                    fontFamily = FontFamily.Monospace
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 1. Metric Card: Dead Reckoning Drift Rate
-        AuditMetricCard(
-            title = "DEAD RECKONING DRIFT RATE",
-            achieved = String.format(Locale.US, "%.2f %%", auditResults.driftPercentAchieved),
-            target = String.format(Locale.US, "< %.2f %%", auditResults.driftPercentTarget),
-            detail = "Distance Traveled: " + String.format(Locale.US, "%.1f m", auditResults.distanceTraveledMeters) +
-                    " | Terminal Error: 3.97 m",
-            passed = auditResults.driftPassed
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // 2. Metric Card: Lateral Cross-Track Error
-        AuditMetricCard(
-            title = "LATERAL CROSS-TRACK DEVIATION",
-            achieved = String.format(Locale.US, "%.2f m", auditResults.crossTrackAchievedMeters),
-            target = String.format(Locale.US, "< %.2f m", auditResults.crossTrackTargetMeters),
-            detail = "Lane-Level Containment Confirmed (OSM Road Spline Clamped)",
-            passed = auditResults.crossTrackPassed
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // 3. Metric Card: Exit Recovery Discontinuity
-        AuditMetricCard(
-            title = "EXIT RECOVERY STEP DISCONTINUITY",
-            achieved = String.format(Locale.US, "%.3f m", auditResults.recoveryStepAchievedMeters),
-            target = String.format(Locale.US, "< %.2f m", auditResults.recoveryStepTargetMeters),
-            detail = "Continuous Soft Damping (Zero Teleportation Spikes)",
-            passed = auditResults.recoveryStepPassed
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 4. Embedded Engine Specifications Card
-        Text(
-            text = "EMBEDDED SYSTEM CAPABILITIES",
-            color = TextPrimaryDark,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = FontFamily.Monospace,
-            letterSpacing = 1.sp
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .shadow(2.dp, RoundedCornerShape(10.dp))
-                .clip(RoundedCornerShape(10.dp))
-                .background(SurfaceCardLight)
-                .border(1.dp, BorderLight, RoundedCornerShape(10.dp))
-                .padding(12.dp)
-        ) {
-            Column {
-                SpecRow(label = "15-State ESKF Rate:", value = String.format(Locale.US, "%.1f Hz (Single CPU Thread)", auditResults.filterFrequencyHz))
-                Spacer(modifier = Modifier.height(4.dp))
-                SpecRow(label = "AI Speed Inference:", value = String.format(Locale.US, "%.1f us (204 KB ONNX)", auditResults.aiInferenceLatencyUs))
-                Spacer(modifier = Modifier.height(4.dp))
-                SpecRow(label = "ISRO NavIC Dual-Band:", value = "L5 (1.17 GHz) + S-Band (2.49 GHz)")
-                Spacer(modifier = Modifier.height(4.dp))
-                SpecRow(label = "Disturbance Immunity:", value = String.format(Locale.US, "%d Potholes Gated (>45 m/s3)", auditResults.potholesDampedCount))
-            }
-        }
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        // Action Button: RUN SIMULATION AGAIN
-        Button(
-            onClick = onRunAgain,
-            colors = ButtonDefaults.buttonColors(containerColor = NavRouteBlue, contentColor = Color.White),
-            shape = RoundedCornerShape(10.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .shadow(3.dp, RoundedCornerShape(10.dp))
-        ) {
-            Text(
-                text = "RUN SIMULATION AGAIN",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = 1.sp,
-                fontFamily = FontFamily.Monospace
-            )
-        }
-    }
-}
-
-@Composable
-private fun AuditMetricCard(
-    title: String,
-    achieved: String,
-    target: String,
-    detail: String,
-    passed: Boolean
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(2.dp, RoundedCornerShape(10.dp))
-            .clip(RoundedCornerShape(10.dp))
-            .background(SurfaceCardLight)
-            .border(1.dp, BorderLight, RoundedCornerShape(10.dp))
-            .padding(14.dp)
-    ) {
-        Column {
+            Spacer(Modifier.width(12.dp))
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.clickable { onLogoClick() },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = title,
-                    color = TextPrimaryDark,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(StatusGnssBgLight)
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = if (passed) "PASSED" else "FAILED",
-                        color = if (passed) StatusGnssGreen else NavRouteBlue,
-                        fontSize = 9.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = FontFamily.Monospace
-                    )
+                Text("▲", color = PuckBlue, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.width(8.dp))
+                Column {
+                    Text("SAARTHI", color = HomeText, fontSize = 20.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
+                    Text("MISSION AUDIT REPORT", color = HomeSubtext, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, letterSpacing = 1.sp)
                 }
             }
+        }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    text = achieved,
-                    color = NavRouteBlue,
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Monospace
-                )
-                Spacer(modifier = Modifier.padding(horizontal = 4.dp))
-                Text(
-                    text = "(Target: $target)",
-                    color = TextSecondaryDark,
-                    fontSize = 11.sp,
-                    fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.padding(bottom = 3.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
+        val allPassed = auditResults.driftPassed && auditResults.crossTrackPassed && auditResults.recoveryStepPassed
+        Box(
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                .background((if (allPassed) StatusGreen else StatusRed).copy(alpha = 0.12f))
+                .border(1.dp, (if (allPassed) StatusGreen else StatusRed).copy(alpha = 0.4f), RoundedCornerShape(14.dp))
+                .padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
             Text(
-                text = detail,
-                color = TextMutedDark,
-                fontSize = 10.sp,
-                fontFamily = FontFamily.Monospace
+                if (allPassed) "✓  ALL BENCHMARKS PASSED" else "✗  SOME BENCHMARKS FAILED",
+                color = if (allPassed) StatusGreen else StatusRed,
+                fontSize = 14.sp, fontWeight = FontWeight.Bold
+            )
+        }
+
+        SectionLabel("ACCURACY BENCHMARKS")
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            MetricCard("Cumulative Position Drift", "%.2f%%".format(auditResults.driftPercentAchieved),
+                "< %.1f%%".format(auditResults.driftPercentTarget), auditResults.driftPassed)
+            MetricCard("Cross-Track Lane Error", "%.2f m".format(auditResults.crossTrackAchievedMeters),
+                "< %.2f m".format(auditResults.crossTrackTargetMeters), auditResults.crossTrackPassed)
+            MetricCard("Recovery Step Offset", "%.3f m".format(auditResults.recoveryStepAchievedMeters),
+                "< %.2f m".format(auditResults.recoveryStepTargetMeters), auditResults.recoveryStepPassed)
+        }
+
+        SectionLabel("SYSTEM TELEMETRY")
+        Column(
+            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp))
+                .background(HomeCardBg).border(1.dp, HomeBorder, RoundedCornerShape(14.dp)).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            TelRow("Distance Traveled", "%.2f m".format(auditResults.distanceTraveledMeters))
+            TelRow("Filter Frequency", "%.1f Hz".format(auditResults.filterFrequencyHz))
+            TelRow("AI Inference Latency", "%.1f µs".format(auditResults.aiInferenceLatencyUs))
+            TelRow("AI Model Size", "${auditResults.aiModelSizeBytes / 1024} KB")
+            TelRow("NavIC Satellites Locked", "${auditResults.navicSatellitesLocked}")
+            TelRow("Potholes Dampened", "${auditResults.potholesDampedCount}")
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        Button(
+            onClick = onRunAgain,
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = PuckBlue)
+        ) {
+            Text("RUN AGAIN", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 15.sp, letterSpacing = 1.sp)
+        }
+
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Text(text, color = HomeSubtext, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.5.sp)
+}
+
+@Composable
+private fun MetricCard(label: String, achieved: String, target: String, passed: Boolean) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp))
+            .background(HomeCardBg).border(1.dp, HomeBorder, RoundedCornerShape(12.dp)).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(label, color = HomeSubtext, fontSize = 10.sp, fontWeight = FontWeight.Medium)
+            Spacer(Modifier.height(4.dp))
+            Text(achieved, color = HomeText, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Target: $target", color = HomeSubtext, fontSize = 10.sp)
+        }
+        Box(
+            modifier = Modifier.clip(RoundedCornerShape(8.dp))
+                .background((if (passed) StatusGreen else StatusRed).copy(alpha = 0.12f))
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+        ) {
+            Text(
+                if (passed) "PASSED" else "FAILED",
+                color = if (passed) StatusGreen else StatusRed,
+                fontSize = 10.sp, fontWeight = FontWeight.Bold
             )
         }
     }
 }
 
 @Composable
-private fun SpecRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = label, color = TextMutedDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
-        Text(text = value, color = TextPrimaryDark, fontSize = 10.sp, fontFamily = FontFamily.Monospace)
+private fun TelRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, color = HomeSubtext, fontSize = 11.sp)
+        Text(value, color = HomeText, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
     }
 }

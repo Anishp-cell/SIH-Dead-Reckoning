@@ -18,140 +18,107 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.sarathi.theme.BorderLight
-import com.example.sarathi.theme.MapTerrainBg
-import com.example.sarathi.theme.NavRouteBlue
-import com.example.sarathi.theme.SurfaceCardLight
-import com.example.sarathi.theme.TextMutedDark
+import com.example.sarathi.theme.HomeBg
+import com.example.sarathi.theme.HomeBorder
+import com.example.sarathi.theme.HomeCardBg
+import com.example.sarathi.theme.HomeSubtext
+import com.example.sarathi.theme.PuckBlue
 import com.example.sarathi.ui.audit.AuditScreen
 import com.example.sarathi.ui.home.HomeScreen
 import com.example.sarathi.ui.nav.NavigationScreen
+import com.example.sarathi.ui.splash.SplashScreen
 import com.example.sarathi.viewmodel.AppTab
 import com.example.sarathi.viewmodel.SarathiViewModel
 
 @Composable
-fun SarathiApp(
-    viewModel: SarathiViewModel = viewModel()
-) {
-    val currentTab by viewModel.currentTab.collectAsState()
-    val vehicleState by viewModel.vehicleState.collectAsState()
-    val auditResults by viewModel.auditResults.collectAsState()
+fun SarathiApp(viewModel: SarathiViewModel = viewModel()) {
+    val currentTab     by viewModel.currentTab.collectAsState()
+    val vehicleState   by viewModel.vehicleState.collectAsState()
+    val auditResults   by viewModel.auditResults.collectAsState()
+    val preFlightStep  by viewModel.preFlightStep.collectAsState()
 
     Scaffold(
         bottomBar = {
-            BottomTabBar(
-                currentTab = currentTab,
-                onSelectTab = { viewModel.selectTab(it) }
-            )
+            if (currentTab != AppTab.SPLASH) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(HomeCardBg)
+                        .border(1.dp, HomeBorder, RoundedCornerShape(topStart = 0.dp, topEnd = 0.dp))
+                        .padding(horizontal = 20.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment     = Alignment.CenterVertically
+                ) {
+                    listOf(AppTab.HOME to "HOME", AppTab.NAVIGATION to "NAV", AppTab.AUDIT to "AUDIT")
+                        .forEach { (tab, label) ->
+                            val selected = currentTab == tab
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(if (selected) PuckBlue else Color.Transparent)
+                                    .clickable { viewModel.selectTab(tab) }
+                                    .padding(horizontal = 28.dp, vertical = 8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text       = label,
+                                    color      = if (selected) Color.White else HomeSubtext,
+                                    fontSize   = 11.sp,
+                                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                                    letterSpacing = 1.sp
+                                )
+                            }
+                        }
+                }
+            }
         },
-        containerColor = MapTerrainBg
+        containerColor = HomeBg
     ) { innerPadding ->
         Box(
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(if (currentTab == AppTab.SPLASH) androidx.compose.foundation.layout.PaddingValues(0.dp) else innerPadding)
         ) {
             when (currentTab) {
-                AppTab.HOME -> {
+                AppTab.SPLASH ->
+                    SplashScreen(
+                        onSplashFinished = { viewModel.selectTab(AppTab.HOME) }
+                    )
+                AppTab.HOME ->
                     HomeScreen(
                         selectedVehicleType = vehicleState.vehicleType,
                         onSelectVehicleType = { viewModel.setVehicleType(it) },
-                        onStartNavigation = { viewModel.startNavigation() }
+                        onStartNavigation   = { viewModel.runPreFlightChecksAndNavigate() },
+                        preFlightStep       = preFlightStep,
+                        onDismissPreFlight  = { viewModel.dismissPreFlightChecks() },
+                        onBack              = { viewModel.goBack() },
+                        onLogoClick         = { viewModel.resetToIntro() }
                     )
-                }
-                AppTab.NAVIGATION -> {
+                AppTab.NAVIGATION ->
                     NavigationScreen(
-                        state = vehicleState,
-                        onStartSimulation = { viewModel.startSimulation() },
-                        onStopSimulation = { viewModel.stopSimulation() },
-                        onTogglePause = { viewModel.togglePauseResume() },
-                        onRestart = { viewModel.restartSimulation() },
-                        onOpenAudit = { viewModel.selectTab(AppTab.AUDIT) }
+                        state               = vehicleState,
+                        onStartSimulation   = { viewModel.startSimulation() },
+                        onStopSimulation    = { viewModel.stopSimulation() },
+                        onTogglePause       = { viewModel.togglePauseResume() },
+                        onRestart           = { viewModel.restartSimulation() },
+                        onOpenAudit         = { viewModel.selectTab(AppTab.AUDIT) },
+                        onToggleDiagnostics = { viewModel.toggleDiagnosticsPanel() },
+                        onBack              = { viewModel.goBack() },
+                        onLogoClick         = { viewModel.resetToIntro() }
                     )
-                }
-                AppTab.AUDIT -> {
+                AppTab.AUDIT ->
                     AuditScreen(
                         auditResults = auditResults,
-                        onRunAgain = { viewModel.startNavigation() }
+                        onRunAgain   = { viewModel.startNavigation() },
+                        onBack       = { viewModel.goBack() },
+                        onLogoClick  = { viewModel.resetToIntro() }
                     )
-                }
             }
         }
-    }
-}
-
-@Composable
-private fun BottomTabBar(
-    currentTab: AppTab,
-    onSelectTab: (AppTab) -> Unit
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .shadow(8.dp)
-            .background(SurfaceCardLight)
-            .border(1.dp, BorderLight)
-            .padding(horizontal = 14.dp, vertical = 8.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            TabItem(
-                label = "HOME",
-                isSelected = currentTab == AppTab.HOME,
-                onClick = { onSelectTab(AppTab.HOME) }
-            )
-
-            TabItem(
-                label = "NAVIGATION",
-                isSelected = currentTab == AppTab.NAVIGATION,
-                onClick = { onSelectTab(AppTab.NAVIGATION) }
-            )
-
-            TabItem(
-                label = "AUDIT",
-                isSelected = currentTab == AppTab.AUDIT,
-                onClick = { onSelectTab(AppTab.AUDIT) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun TabItem(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val bgColor = if (isSelected) Color(0xFFE8F0FE) else Color.Transparent
-    val textColor = if (isSelected) NavRouteBlue else TextMutedDark
-    val borderColor = if (isSelected) NavRouteBlue.copy(alpha = 0.4f) else Color.Transparent
-
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable { onClick() }
-            .padding(horizontal = 18.dp, vertical = 7.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            color = textColor,
-            fontSize = 11.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            fontFamily = FontFamily.Monospace,
-            letterSpacing = 1.sp
-        )
     }
 }
